@@ -27,10 +27,9 @@ async def on_message(message):
     if message.content.startswith('!test'):
         await message.channel.send('Hello!')
 
-    twitterLinks = ["https://x.com", "https://twitter.com"]
-    for domain in range(len(twitterLinks)):
-        if twitterLinks[domain] in message.content:
-            fxMessage = message.content.replace(twitterLinks[domain], "https://fxtwitter.com")
-            await message.channel.send(fxMessage)
+    twitter_links = ["https://x.com", "https://twitter.com"]
+    for link in twitter_links:
+        if message.content.startswith(link) and "/status/" in message.content:
+            await message.channel.send(message.content.replace(link, "https://fxtwitter.com"))
 
 client.run(TOKEN)
