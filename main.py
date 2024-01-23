@@ -32,8 +32,8 @@ async def on_message(message):
     if message.author == client.user:
         return
 
-    if ":3" in message.content:
-        await message.channel.send(":3C====3")
+    #if ":3" in message.content:
+    #    await message.channel.send(":3C====3")
 
     twitter_links = ["https://x.com", "https://twitter.com"]
     for link in twitter_links:
