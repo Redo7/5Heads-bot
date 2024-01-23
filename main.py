@@ -22,12 +22,12 @@ async def on_ready():
 
 @client.event
 async def on_message(message):
-    animation_3c = [':OC====3', ':C====3', '¦C===3', ':C==3', ':C=3', ':C3',
-                    '¦3', ':3', '¦3', ':C3', ':C=3', '¦C3', ':C=3', ':C3', ':3']
-    if ":3C====3" in message.content and message.author == client.user:
-        for frame in animation_3c:
-            await message.edit(content=frame)
-            time.sleep(0.4)
+    # animation_3c = [':OC====3', ':C====3', '¦C===3', ':C==3', ':C=3', ':C3',
+    #                 '¦3', ':3', '¦3', ':C3', ':C=3', '¦C3', ':C=3', ':C3', ':3']
+    # if ":3C====3" in message.content and message.author == client.user:
+    #     for frame in animation_3c:
+    #         await message.edit(content=frame)
+    #         time.sleep(0.4)
 
     if message.author == client.user:
         return
