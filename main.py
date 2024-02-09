@@ -49,9 +49,9 @@ async def on_message(message):
     # if ":3" in message.content:
     #    await message.channel.send(":3C====3")
 
-    twitter_links = ["https://x.com", "https://twitter.com"]
-    for link in twitter_links:
-        if message.content.startswith(link) and "/status/" in message.content:
-            # await message.channel.send(message.content.replace(link, "https://fxtwitter.com"))
+    # twitter_links = ["https://x.com", "https://twitter.com"]
+    # for link in twitter_links:
+    #     if message.content.startswith(link) and "/status/" in message.content:
+    #         await message.channel.send(message.content.replace(link, "https://fxtwitter.com"))
 
 bot.run(TOKEN)
