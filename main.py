@@ -18,8 +18,6 @@ bot = commands.Bot(command_prefix='!', intents=intents)
 @bot.event
 async def on_ready():
     print('Logged in as {0.user}'.format(bot))
-    bot.tree.clear_commands(guild=None)
-    await bot.tree.sync()
 
 
 @bot.command(name="test", description="shrigma ball")
@@ -27,11 +25,10 @@ async def test(ctx):
     await ctx.respond("123")
 
 
-@bot.command(name="sync", description="Syncs commands")
-async def sync(ctx):
-    fmt = await ctx.bot.tree.sync()
-    print(f"Synced {len(fmt)} commands")
-    await ctx.send(f"Synced {len(fmt)} commands")
+@commands.command(name="sync", hidden=True)
+async def sync_commands(self, ctx: commands.Context) -> None:
+    resp = await self.bot.tree.sync()
+    await ctx.send(f"Syncing slash commands. {len(resp)}")
 
 
 @bot.event
