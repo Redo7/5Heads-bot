@@ -52,6 +52,6 @@ async def on_message(message):
     twitter_links = ["https://x.com", "https://twitter.com"]
     for link in twitter_links:
         if message.content.startswith(link) and "/status/" in message.content:
-            await message.channel.send(message.content.replace(link, "https://fxtwitter.com"))
+            # await message.channel.send(message.content.replace(link, "https://fxtwitter.com"))
 
 bot.run(TOKEN)
