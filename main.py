@@ -1,8 +1,9 @@
 import os
-import time
+# import time
 from dotenv import find_dotenv, load_dotenv
 import discord
 from discord import app_commands
+from discord.ext import commands
 
 dotenv_path = find_dotenv()
 load_dotenv(dotenv_path)
@@ -12,15 +13,22 @@ TOKEN = os.getenv('TOKEN')
 intents = discord.Intents.default()
 intents.message_content = True
 client = discord.Client(intents=intents)
+bot = commands.Bot(command_prefix='!', intents=intents)
 tree = app_commands.CommandTree(client)
 
 
-@client.event
+@bot.event
 async def on_ready():
-    print('Logged in as {0.user}'.format(client))
+    print('Logged in as {0.user}'.format(bot))
+    await bot.tree.sync()
 
 
-@client.event
+@bot.command(name="test", description="shrigma ball")
+async def test(ctx):
+    await ctx.respond("123")
+
+
+@bot.event
 async def on_message(message):
     # animation_3c = [':OC====3', ':C====3', '¦C===3', ':C==3', ':C=3', ':C3',
     #                 '¦3', ':3', '¦3', ':C3', ':C=3', '¦C3', ':C=3', ':C3', ':3']
@@ -32,7 +40,7 @@ async def on_message(message):
     if message.author == client.user:
         return
 
-    #if ":3" in message.content:
+    # if ":3" in message.content:
     #    await message.channel.send(":3C====3")
 
     twitter_links = ["https://x.com", "https://twitter.com"]
