@@ -1,6 +1,7 @@
 import os
 import json
 import time
+import sqlite3
 from dotenv import find_dotenv, load_dotenv
 import discord
 from discord.ext import commands
