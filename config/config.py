@@ -1,3 +1,5 @@
+from discord.app_commands import Choice
+
 from imports import *
 
 database = sqlite3.connect('config/config.db')
@@ -20,6 +22,7 @@ def update_db(server_id, feature):
         cursor.execute(query, (current_state, server_id))
         database.commit()
         print(f'Database changes: ({feature}: {current_state}) for server: {server_id} committed successfully')
+        return current_state
     else:
         # Create new entry if not found
         print(f"couldn't find {server_id}... Adding a new entry")
@@ -34,22 +37,15 @@ def check_db(server_id, feature):
     data = cursor.execute(query).fetchall()
     return data[0][0]
 
-@bot.hybrid_command(name="togglefeature", description="Toggles the bots features on/off")
-@discord.app_commands.checks.has_permissions(administrator=True)
-async def toggle_feature(ctx: commands.Context, feature) -> None:
-    try:
-        cursor.execute("PRAGMA table_info(config)")
-        columns = [row[1] for row in cursor.fetchall()]
-    except sqlite3.OperationalError:
-        # Column might not exist
-        columns = []
-        pass
 
-    if feature == 'server_id':
-        await ctx.send("Nah uh")
-        return
-    if feature not in columns:
-        await ctx.send(f"{feature} does not exist")
-        return
-    update_db(ctx.guild.id, feature)
-    await ctx.send(f"Toggling {feature}")
+@bot.hybrid_command(name="togglefeature", description="Toggles the bots features on/off")
+@app_commands.choices(choices=[
+        Choice(name=":3c Animation", value="animation_3c"),
+        Choice(name="FXTwitter", value="twitter_links")
+        ])
+@app_commands.checks.has_permissions(administrator=True)
+async def toggle_feature(ctx: commands.Context, choices: Choice[str]) -> None:
+    status = update_db(ctx.guild.id, choices.value)
+    status = 'enabled' if status == 1 else 'disabled'
+    print(status)
+    await ctx.send(f"{choices.name} is now {status}")
