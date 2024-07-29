@@ -47,5 +47,4 @@ def check_db(server_id, feature):
 async def toggle_feature(ctx: commands.Context, choices: Choice[str]) -> None:
     status = update_db(ctx.guild.id, choices.value)
     status = 'enabled' if status == 1 else 'disabled'
-    print(status)
     await ctx.send(f"{choices.name} is now {status}")

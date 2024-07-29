@@ -2,6 +2,8 @@ import os
 import json
 import time
 import sqlite3
+import asyncio
+
 from dotenv import find_dotenv, load_dotenv
 import discord
 from discord import app_commands
