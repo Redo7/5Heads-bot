@@ -11,7 +11,7 @@ async def on_guild_join(guild):
     query = 'SELECT * FROM config WHERE server_id = ?'
     data = cursor.execute(query, (guild.id,)).fetchall()   
     if data != [] and guild.id == data[0][0]:
-        print(f'Joined {guild} ({guild.id}), but found an existing database entry. Skipping...')
+        print(f'Joined "{guild}" ({guild.id}), but found an existing database entry. Skipping...')
         return
     else:
         print(f'Creating new database entry for {guild} ({guild.id})')
