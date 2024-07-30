@@ -1,8 +1,10 @@
 import os
+import sys
 import json
 import time
 import sqlite3
 import asyncio
+import requests
 
 from dotenv import find_dotenv, load_dotenv
 import discord
@@ -12,10 +14,15 @@ from discord.ext import commands
 dotenv_path = find_dotenv()
 load_dotenv(dotenv_path)
 OWNER_ID = os.getenv('OWNER_ID')
+CLIENT_KEY = os.getenv('CLIENT_KEY')
+TENOR_API_KEY = os.getenv('TENOR_API_KEY')
 
 intents = discord.Intents.default()
 intents.message_content = True
 bot = commands.Bot(command_prefix='!', owner_id=OWNER_ID, intents=intents)
 
-import misc
+sys.stdout.reconfigure(encoding='utf-8')
+
+from misc import misc
+from misc import tenor
 from config import config

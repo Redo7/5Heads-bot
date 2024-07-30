@@ -10,6 +10,10 @@ async def test(ctx: commands.Context) -> None:
     print(vars(ctx))
     await ctx.send("Done")
 
+@bot.hybrid_command(name="widepeepohappy", description="Sends a widepeepoHappy emote")
+async def widepeepohappy(ctx: commands.Context) -> None:
+    await ctx.send('<:WidePeepoHappy1:768481090079686677><:WidePeepoHappy2:768481089936818216><:WidePeepoHappy3:768481090029355038><:WidePeepoHappy4:768481090041413653>')
+
 @bot.event
 async def on_message(message):
     animation_3c = [':OC====3', ':C====3', '¦C===3', ':C==3', ':C=3', ':C3',

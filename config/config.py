@@ -14,7 +14,7 @@ async def on_guild_join(guild):
         print(f'Joined "{guild}" ({guild.id}), but found an existing database entry. Skipping...')
         return
     else:
-        print(f'Creating new database entry for {guild} ({guild.id})')
+        print(f'Creating new database entry for "{guild}" ({guild.id})')
         query = 'INSERT INTO config (server_id) VALUES (?)'
         cursor.execute(query, (guild.id,))
         database.commit()
