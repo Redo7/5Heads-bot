@@ -43,12 +43,12 @@ def check_db(server_id, feature):
 
 
 @bot.hybrid_command(name="togglefeature", description="Toggles the bots features on/off")
-@app_commands.choices(choices=[
+@app_commands.choices(feature=[
         Choice(name=":3c Animation", value="animation_3c"),
         Choice(name="FXTwitter", value="twitter_links")
         ])
 @app_commands.checks.has_permissions(administrator=True)
-async def toggle_feature(ctx: commands.Context, choices: Choice[str]) -> None:
-    status = update_db(ctx.guild.id, choices.value)
+async def toggle_feature(ctx: commands.Context, feature: Choice[str]) -> None:
+    status = update_db(ctx.guild.id, feature.value)
     status = 'enabled' if status == 1 else 'disabled'
-    await ctx.send(f"{choices.name} is now {status}")
+    await ctx.send(f"{feature.name} is now {status}")
