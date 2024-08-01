@@ -47,7 +47,7 @@ async def gifs(
         'peek': 'peeks at',
         'sad': 'is sad for',
         'slap': 'slaps',
-        'wave': 'waves'
+        'wave': 'waves at'
     }
 
     if name.value == 'kys' and random.randint(0, 1) == 1:
