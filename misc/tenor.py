@@ -21,6 +21,7 @@ ckey = CLIENT_KEY  # set the client_key for the integration and use the same val
     Choice(name="Peek", value="peek"),
     Choice(name="Sad", value="sad"),
     Choice(name="Slap", value="slap"),
+    Choice(name="Wave", value="wave")
     ])
 @app_commands.choices(anime=[
         Choice(name="Yes", value=1),
@@ -45,7 +46,8 @@ async def gifs(
         'kys': '',
         'peek': 'peeks at',
         'sad': 'is sad for',
-        'slap': 'slaps'
+        'slap': 'slaps',
+        'wave': 'waves'
     }
 
     if name.value == 'kys' and random.randint(0, 1) == 1:
