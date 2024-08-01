@@ -59,18 +59,24 @@ async def on_message(message):
 
     twitter_links = ["https://x.com", "https://twitter.com"]
     for link in twitter_links:
-        if message.content.startswith(link) and "/status/" in message.content and config.check_db(message.guild.id, 'twitter_links') == 1:
-            new_msg = await message.channel.send(message.content.replace(link, "https://fxtwitter.com"))
+        if link in message.content and "/status/" in message.content and config.check_db(message.guild.id, 'twitter_links') == 1:
+            msg_split = message.content.split(' ')
+            indices = [i for i, s in enumerate(msg_split) if link in s]
+            new_msg = await message.channel.send(msg_split[indices[0]].replace(link, "https://fxtwitter.com"))
             
             await new_msg.add_reaction('✔️')
             await new_msg.add_reaction('✖️')
 
             def check(reaction, user):
-                return user == message.author and str(reaction.emoji) == '✔️'
+                return user == message.author
             
             try:
-                reaction, user = await bot.wait_for('reaction_add', timeout=30.0, check=check)
+                reaction, user = await bot.wait_for('reaction_add', timeout=10.0, check=check)
             except asyncio.TimeoutError:
                 await new_msg.delete()
             else:
-                await new_msg.clear_reactions()
+                if reaction.emoji == '✖️':
+                    await new_msg.delete()
+                elif reaction.emoji == '✔️':
+                    await new_msg.clear_reactions()
+                    
