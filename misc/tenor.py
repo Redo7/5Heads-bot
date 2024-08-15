@@ -50,11 +50,12 @@ async def gifs(
         'wave': 'waves at'
     }
 
-    if name.value == 'kys' and random.randint(0, 1) == 1:
+    kysRandInt = random.randint(0, 1)
+    if name.value == 'kys' and kysRandInt == 1:
         await ctx.send(f"{target}... You should kill yourself ***NOW***")
         await ctx.send("https://c.tenor.com/sAhYu4Wd7IcAAAAC/tenor.gif")
         return
-    elif name.value == 'kys' and random.randint(0, 1) == 0:
+    elif name.value == 'kys' and kysRandInt == 0:
         await ctx.send(f"{target}... Keep yourself safe :grin:")
         await ctx.send("https://c.tenor.com/isav-uIsV64AAAAC/tenor.gif")
         return
