@@ -2,10 +2,10 @@ from imports import *
 import random
 from config import config
 from discord.app_commands import Choice
+from typing import Optional
 
-# set the apikey and limit
-apikey = TENOR_API_KEY  # click to set to your apikey
-ckey = CLIENT_KEY  # set the client_key for the integration and use the same value for all API calls
+apikey = TENOR_API_KEY  
+ckey = CLIENT_KEY
 
 @bot.hybrid_command(name="gifs", description="Send a gif targeted at someone")
 @app_commands.choices(name=[
@@ -30,8 +30,8 @@ ckey = CLIENT_KEY  # set the client_key for the integration and use the same val
 async def gifs(
     ctx: commands.Context, 
     name: Choice[str], 
-    anime: Choice[int],
-    target: str = commands.parameter(description="The @ of the person the gif is targetted at"),
+    anime: Optional[Choice[int]],
+    target: str = commands.parameter(description="The @ of the person the gif is targetted at")
     ) -> None:
 
     resp = {
@@ -63,7 +63,6 @@ async def gifs(
         pass
 
     lmt = 8 # amount of gifs to retrieve
-    # get the top 8 GIFs for the search term
     if anime.value == 1:
         r = requests.get(
             "https://tenor.googleapis.com/v2/search?q=%s+anime&key=%s&client_key=%s&limit=%s" % (name.value, apikey, ckey,  lmt))
@@ -72,7 +71,6 @@ async def gifs(
             "https://tenor.googleapis.com/v2/search?q=%s&key=%s&client_key=%s&limit=%s" % (name.value, apikey, ckey,  lmt))
         
     if r.status_code == 200:
-        # load the GIFs using the urls for the smaller GIF sizes
         gifs = json.loads(r.content)
         await ctx.send(f"{ctx.author.display_name} {resp[name.value]} {target}")
         await ctx.send(gifs['results'][random.randint(0, 7)]['url'])
