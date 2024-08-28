@@ -26,3 +26,4 @@ sys.stdout.reconfigure(encoding='utf-8')
 from misc import misc
 from misc import tenor
 from config import config
+from admin import admin
