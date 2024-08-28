@@ -7,8 +7,8 @@ class Misc(commands.Cog):
         self.bot = bot
         self._last_member = None
 
-@bot.hybrid_command(name="test", description="Log message context")
-async def test(ctx: commands.Context) -> None:
+@bot.hybrid_command(name="context", description="Log message context")
+async def context(ctx: commands.Context) -> None:
     print(vars(ctx))
     await ctx.send("Done")
 
