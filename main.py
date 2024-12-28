@@ -11,8 +11,8 @@ async def sync(ctx):
     if str(ctx.author.id) == OWNER_ID:
         resp = await bot.tree.sync()
         msg = f"Syncing {len(resp)} commands."
-        print(msg)
         await ctx.send(msg)
+        print(msg)
     else:
         await ctx.send('Nah uh')
 

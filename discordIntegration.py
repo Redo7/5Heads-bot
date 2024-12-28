@@ -41,7 +41,7 @@ class EmbedBuilder:
         self.embed.set_footer(text=footer)
         if fields:
             for field in fields:
-                self.embed.add_field(name=field.name, value=field.value, inline=field.inline)
+                self.embed.add_field(name=field["name"], value=field["value"], inline=field["inline"])
 
     def build(self):
         return self.embed

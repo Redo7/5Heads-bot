@@ -16,6 +16,7 @@ load_dotenv(dotenv_path)
 OWNER_ID = os.getenv('OWNER_ID')
 CLIENT_KEY = os.getenv('CLIENT_KEY')
 TENOR_API_KEY = os.getenv('TENOR_API_KEY')
+RECRUIT_CHANNEL = int(os.getenv('RECRUIT_CHANNEL'))
 
 intents = discord.Intents.default()
 intents.message_content = True
@@ -25,5 +26,6 @@ sys.stdout.reconfigure(encoding='utf-8')
 
 from misc import misc
 from misc import tenor
+from recruit import recruit
 from config import config
 from admin import admin
