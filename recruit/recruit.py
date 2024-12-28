@@ -5,7 +5,7 @@ from typing import Optional
 import uuid
 from discord.ui import View, Button
 
-database = sqlite3.connect('config/config.db')
+database = sqlite3.connect('db/main.db')
 cursor = database.cursor()
 database.execute('CREATE TABLE IF NOT EXISTS voting(voting_id TEXT, msg TEXT, for TEXT, against TEXT)')
 

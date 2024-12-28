@@ -2,7 +2,7 @@ from discord.app_commands import Choice
 
 from imports import *
 
-database = sqlite3.connect('config/config.db')
+database = sqlite3.connect('db/main.db')
 cursor = database.cursor()
 database.execute('CREATE TABLE IF NOT EXISTS config(server_id INT, twitter_links INT DEFAULT 1, animation_3c INT DEFAULT 1)')
 
