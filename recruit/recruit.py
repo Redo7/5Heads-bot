@@ -10,30 +10,35 @@ cursor = database.cursor()
 database.execute('CREATE TABLE IF NOT EXISTS voting(voting_id TEXT, msg TEXT, for TEXT, against TEXT)')
 
 class MyView(View):
-  def __init__(self, uid):
-        super().__init__()
+  def __init__(self, uid, timeout=None):
+        super().__init__(timeout=timeout)
         self.uid = uid
 
   @discord.ui.button(emoji="✅", label="Vote For", style=discord.ButtonStyle.green)
   async def button_1_callback(self, interaction: discord.Interaction, button: discord.ui.Button):
-    await interaction.response.defer(ephemeral=True, thinking=True)
-    print("Vote received")
-    data = cursor.execute('SELECT * FROM voting WHERE voting_id = ?', (self.uid,)).fetchall()
-    if str(interaction.user.id) in data[0][2]:
-        await interaction.followup.send("You can not vote for the same option twice")
-        return
-    await check_vote(interaction, self.uid, data[0][2], data[0][3], str(interaction.user.id), 'for', 'against')
-    await interaction.followup.send("You voted for ✅")
+    try:
+        await interaction.response.defer(ephemeral=True, thinking=True)
+        data = cursor.execute('SELECT * FROM voting WHERE voting_id = ?', (self.uid,)).fetchall()
+        if str(interaction.user.id) in data[0][2]:
+            await interaction.followup.send("You can not vote for the same option twice")
+            return
+        await check_vote(interaction, self.uid, data[0][2], data[0][3], str(interaction.user.id), 'for', 'against')
+    except Exception as e: print(e)
+    finally:
+        await interaction.followup.send("You voted for ✅")
 
   @discord.ui.button(emoji="✖️", label="Vote Against", style=discord.ButtonStyle.red)
   async def button_2_callback(self, interaction: discord.Interaction, button: discord.ui.Button):
-    await interaction.response.defer(ephemeral=True, thinking=True)
-    data = cursor.execute('SELECT * FROM voting WHERE voting_id = ?', (self.uid,)).fetchall()
-    if str(interaction.user.id) in data[0][3]:
-        await interaction.followup.send("You can not vote for the same option twice")
-        return
-    await check_vote(interaction, self.uid, data[0][3], data[0][2], str(interaction.user.id), 'against', 'for')
-    await interaction.followup.send("You voted against ❌")
+    try:
+        await interaction.response.defer(ephemeral=True, thinking=True)
+        data = cursor.execute('SELECT * FROM voting WHERE voting_id = ?', (self.uid,)).fetchall()
+        if str(interaction.user.id) in data[0][3]:
+            await interaction.followup.send("You can not vote for the same option twice")
+            return
+        await check_vote(interaction, self.uid, data[0][3], data[0][2], str(interaction.user.id), 'against', 'for')
+    except Exception as e: print(e)
+    finally:
+        await interaction.followup.send("You voted against ❌")
 
 @bot.hybrid_command(name='recruit', brief='Indocrinate a new member into the server')
 async def recruit(ctx, 
@@ -95,19 +100,15 @@ async def end_voting(ctx, uid: str):
         await ctx.send("I do not have the necessary permissions to delete this message.", ephemeral=True)
 
 async def check_vote(interaction, vote_id, check_for, check_against, user_id, db_for, db_against):
-    print(f"Checking votes for: {vote_id} for user: {user_id}")
     if user_id in check_against:
-        print("User already voted, deleting entry")
         votes_against = json.loads(check_against)
         votes_against.remove(user_id)
         cursor.execute(f"UPDATE voting SET {db_against} = (?) WHERE voting_id = (?)", (json.dumps(votes_against), vote_id,))
         database.commit()
-        print("Entry deleted")
     votes = json.loads(check_for)
     votes.append(user_id)
     cursor.execute(f"UPDATE voting SET {db_for} = (?) WHERE voting_id = (?)", (json.dumps(votes), vote_id,))
     database.commit()
-    print("Vote added and changes commited")
 
 async def execute_query(query):
     cursor.execute(query)
