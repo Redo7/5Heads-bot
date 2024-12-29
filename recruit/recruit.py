@@ -16,25 +16,23 @@ class MyView(View):
 
   @discord.ui.button(emoji="✅", label="Vote For", style=discord.ButtonStyle.green)
   async def button_1_callback(self, interaction: discord.Interaction, button: discord.ui.Button):
-    await interaction.response.send_message("...", ephemeral=True)
-    message = await interaction.original_response()
+    await interaction.response.defer(ephemeral=True, thinking=True)
     data = cursor.execute('SELECT * FROM voting WHERE voting_id = ?', (self.uid,)).fetchall()
     if str(interaction.user.id) in data[0][2]:
-        await interaction.followup.edit_message(content="You can not vote for the same option twice", message_id=message.id)
+        await interaction.followup.send("You can not vote for the same option twice")
         return
     await check_vote(interaction, self.uid, data[0][2], data[0][3], str(interaction.user.id), 'for', 'against')
-    await interaction.followup.edit_message(content="You voted for ✅", message_id=message.id)
+    await interaction.followup.send("You voted for ✅")
 
   @discord.ui.button(emoji="✖️", label="Vote Against", style=discord.ButtonStyle.red)
   async def button_2_callback(self, interaction: discord.Interaction, button: discord.ui.Button):
-    await interaction.response.send_message("...", ephemeral=True)
-    message = await interaction.original_response()
+    await interaction.response.defer(ephemeral=True, thinking=True)
     data = cursor.execute('SELECT * FROM voting WHERE voting_id = ?', (self.uid,)).fetchall()
     if str(interaction.user.id) in data[0][3]:
-        await interaction.followup.edit_message(content="You can not vote for the same option twice", message_id=message.id)
+        await interaction.followup.send("You can not vote for the same option twice")
         return
     await check_vote(interaction, self.uid, data[0][3], data[0][2], str(interaction.user.id), 'against', 'for')
-    await interaction.followup.edit_message(content="You voted against ❌", message_id=message.id)
+    await interaction.followup.send("You voted against ❌")
 
 @bot.hybrid_command(name='recruit', brief='Indocrinate a new member into the server')
 async def recruit(ctx, 
