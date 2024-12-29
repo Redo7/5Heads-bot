@@ -17,6 +17,7 @@ class MyView(View):
   @discord.ui.button(emoji="✅", label="Vote For", style=discord.ButtonStyle.green)
   async def button_1_callback(self, interaction: discord.Interaction, button: discord.ui.Button):
     await interaction.response.defer(ephemeral=True, thinking=True)
+    print("Vote received")
     data = cursor.execute('SELECT * FROM voting WHERE voting_id = ?', (self.uid,)).fetchall()
     if str(interaction.user.id) in data[0][2]:
         await interaction.followup.send("You can not vote for the same option twice")
@@ -44,7 +45,7 @@ description: str = commands.parameter(description="Bio / Short description of th
     # Prep DB
     uid = str(uuid.uuid4())
     print(f'Creating new database entry for voting {uid}')
-    execute_query(f'INSERT INTO voting (voting_id) VALUES ("{uid}")')
+    await execute_query(f'INSERT INTO voting (voting_id) VALUES ("{uid}")')
     cursor.execute('UPDATE voting SET for = (?) WHERE voting_id = (?)', (json.dumps([]), uid))
     cursor.execute('UPDATE voting SET against = (?) WHERE voting_id = (?)', (json.dumps([]), uid))
     database.commit()
@@ -63,7 +64,7 @@ description: str = commands.parameter(description="Bio / Short description of th
         )
     # Dispatch
     voting_msg = await bot.get_channel(RECRUIT_CHANNEL).send(embed=embed.build(), view=MyView(uid))
-    execute_query(f'UPDATE voting SET msg = ({voting_msg.id}) WHERE voting_id = ("{uid}")')
+    await execute_query(f'UPDATE voting SET msg = ({voting_msg.id}) WHERE voting_id = ("{uid}")')
     await ctx.send(f"Voting posted in {bot.get_channel(RECRUIT_CHANNEL).jump_url}", ephemeral=True)
 
 @bot.hybrid_command(name='endvoting', brief='Finalize voting by ID')
@@ -87,23 +88,27 @@ async def end_voting(ctx, uid: str):
         message = await channel.fetch_message(message_id)
         await message.delete()
         # Delete DB entry
-        execute_query(f'DELETE FROM voting WHERE voting_id = "{uid}"')
+        await execute_query(f'DELETE FROM voting WHERE voting_id = "{uid}"')
     except discord.NotFound:
         await ctx.send(f"Message with ID {uid} not found.", ephemeral=True)
     except discord.Forbidden:
         await ctx.send("I do not have the necessary permissions to delete this message.", ephemeral=True)
 
 async def check_vote(interaction, vote_id, check_for, check_against, user_id, db_for, db_against):
+    print(f"Checking votes for: {vote_id} for user: {user_id}")
     if user_id in check_against:
+        print("User already voted, deleting entry")
         votes_against = json.loads(check_against)
         votes_against.remove(user_id)
         cursor.execute(f"UPDATE voting SET {db_against} = (?) WHERE voting_id = (?)", (json.dumps(votes_against), vote_id,))
         database.commit()
+        print("Entry deleted")
     votes = json.loads(check_for)
     votes.append(user_id)
     cursor.execute(f"UPDATE voting SET {db_for} = (?) WHERE voting_id = (?)", (json.dumps(votes), vote_id,))
     database.commit()
+    print("Vote added and changes commited")
 
-def execute_query(query):
+async def execute_query(query):
     cursor.execute(query)
     database.commit()
