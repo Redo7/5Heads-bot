@@ -160,4 +160,4 @@ cython_debug/
 #.idea/
 /config/config.json
 /config/config.db
-/db/main.db
+/db/
