@@ -20,7 +20,7 @@ class Config(commands.Cog):
 
     @commands.Cog.listener()
     async def on_ready(self):
-        print(f"Cog loaded")
+        print(f"Config cog loaded")
 
     @bot.event
     async def on_guild_join(self, guild):

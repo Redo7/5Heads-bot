@@ -15,7 +15,7 @@ class Admin(commands.Cog):
 
     @commands.Cog.listener()
     async def on_ready(self):
-        print(f"Cog loaded")
+        print(f"Admin cog loaded")
 
     @commands.has_permissions(manage_messages=True)
     @bot.hybrid_command(name='purge', brief='Deletes a specified number of messages from the current channel')

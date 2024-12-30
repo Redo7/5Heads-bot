@@ -26,7 +26,7 @@ class Tenor(commands.Cog):
         
     @commands.Cog.listener()
     async def on_ready(self):
-        print(f"Cog loaded")
+        print(f"Tenor cog loaded")
 
     @bot.hybrid_command(name="gifs", description="Send a gif targeted at someone")
     @app_commands.choices(name=[

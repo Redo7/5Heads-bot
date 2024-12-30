@@ -1,10 +1,24 @@
+import os
 import discord
+from discord import app_commands
 from discord.ext import commands
 import datetime
 
-class EmbedBuilder(commands.Cog):
+RECRUIT_CHANNEL = int(os.getenv('RECRUIT_CHANNEL'))
+OWNER_ID = os.getenv('OWNER_ID')
+intents = discord.Intents.default()
+intents.message_content = True
+bot = commands.Bot(command_prefix='!', owner_id=OWNER_ID, intents=intents)
+
+class embedBuilder(commands.Cog):
     def __init__(self, bot):
         self.bot = bot
+        self.ready = False
+    
+    @commands.Cog.listener()
+    async def on_ready(self):
+        self.ready = True
+        print(f"Embed builder cog loaded")
 
     def embed(self, *, title=None, description=None, url=None, color=None, timestamp=None, author=None, author_url=None, author_avatar=None, thumbnail=None, image=None, footer=None, fields=None):
         if color != None:
@@ -19,13 +33,11 @@ class EmbedBuilder(commands.Cog):
         if fields:
             for field in fields:
                 self.embed.add_field(name=field["name"], value=field["value"], inline=field["inline"])
-
-    @commands.Cog.listener()
-    async def on_ready(self):
-        print(f"Cog loaded")
+        print(f"returning {self.embed}")
+        return self.embed
 
     def build(self):
         return self.embed
     
 async def setup(bot):
-    await bot.add_cog(EmbedBuilder(bot))
+    await bot.add_cog(embedBuilder(bot))

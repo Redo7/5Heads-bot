@@ -19,11 +19,14 @@ class Misc(commands.Cog):
 
     @commands.Cog.listener()
     async def on_ready(self):
-        print(f"Cog loaded")
+        print(f"Misc cog loaded")
 
     @bot.hybrid_command(name="context", description="Log message context")
     async def context_misc(self, ctx: commands.Context) -> None:
-        print(vars(ctx))
+        context = ""
+        for var, val in vars(ctx).items():
+            context += f"{var}: {val}\n"
+        print(context)
         await ctx.send("Done")
 
     @bot.hybrid_command(name="widepeepohappy", description="Sends a widepeepoHappy emote")

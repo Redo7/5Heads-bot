@@ -18,7 +18,7 @@ class discordIntegration(commands.Cog):
 
     @commands.Cog.listener()
     async def on_ready(self):
-        print(f"Cog loaded")
+        print(f"Discord integration cog loaded")
 
     async def send_dm(self, user_id, message):
         try:
