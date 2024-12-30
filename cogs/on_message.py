@@ -38,7 +38,6 @@ class onMessage(commands.Cog):
 
         for link in self.twitter_links:
             if link in message.content and "/status/" in message.content and config.check_db(message.guild.id, 'twitter_links') == 1:
-                print(config.check_db(message.guild.id, 'twitter_links'))
                 msg_split = message.content.split(' ')
                 indices = [i for i, s in enumerate(msg_split) if link in s]
                 new_msg = await message.channel.send(msg_split[indices[0]].replace(link, "https://fxtwitter.com"))
