@@ -33,7 +33,6 @@ class embedBuilder(commands.Cog):
         if fields:
             for field in fields:
                 self.embed.add_field(name=field["name"], value=field["value"], inline=field["inline"])
-        print(f"returning {self.embed}")
         return self.embed
 
     def build(self):
