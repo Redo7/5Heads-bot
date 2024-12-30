@@ -37,6 +37,7 @@ async def sync(ctx):
         Choice(name="Discord Integration", value="discordIntegration"),
         Choice(name="Embed Builder", value="embedBuilder"),
         Choice(name="Misc", value="misc"),
+        Choice(name="On_message", value="on_message"),
         Choice(name="Recruit", value="recruit"),
         Choice(name="Tenor", value="tenor")
         ])

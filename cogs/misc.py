@@ -58,44 +58,6 @@ class Misc(commands.Cog):
             'Very doubtful'
         ]
         await ctx.send(f"*{ctx.author.display_name}* asks...\nQuestion: {question}\n*Answer:* **{resp[random.randint(0, 19)]}**")
-
-    @bot.event
-    async def on_message(self, message):
-        animation_3c = [':OC====3', ':C====3', '¦C===3', ':C==3', ':C=3', ':C3',
-                        '¦3', ':3', '¦3', ':C3', ':C=3', '¦C3', ':C=3', ':C3', ':3']
-        if ":3C====3" in message.content and message.author == bot.user:
-            for frame in animation_3c:
-                await message.edit(content=frame)
-                time.sleep(0.4)
-
-        if message.author == bot.user:
-            return
-
-        if ":3" in message.content and config.check_db(message.guild.id, 'animation_3c') == 1:
-            await message.channel.send(":3C====3")
-
-        twitter_links = ["https://x.com", "https://twitter.com"]
-        for link in twitter_links:
-            if link in message.content and "/status/" in message.content and config.check_db(message.guild.id, 'twitter_links') == 1:
-                msg_split = message.content.split(' ')
-                indices = [i for i, s in enumerate(msg_split) if link in s]
-                new_msg = await message.channel.send(msg_split[indices[0]].replace(link, "https://fxtwitter.com"))
-                
-                await new_msg.add_reaction('✔️')
-                await new_msg.add_reaction('✖️')
-
-                def check(reaction, user):
-                    return user == message.author
-                
-                try:
-                    reaction, user = await bot.wait_for('reaction_add', timeout=10.0, check=check)
-                except asyncio.TimeoutError:
-                    await new_msg.delete()
-                else:
-                    if reaction.emoji == '✖️':
-                        await new_msg.delete()
-                    elif reaction.emoji == '✔️':
-                        await new_msg.clear_reactions()
                     
 async def setup(bot):
     await bot.add_cog(Misc(bot))
