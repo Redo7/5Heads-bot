@@ -26,6 +26,7 @@ async def load():
             await bot.load_extension(f"cogs.{filename[:-3]}")
 
 async def main():
+    bot.remove_command("help")
     await load()  # Load the cogs
     await bot.start(TOKEN)
 
