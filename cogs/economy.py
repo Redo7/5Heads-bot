@@ -33,7 +33,6 @@ class Economy(commands.Cog):
             user_balance = entry[2]
             self.user_data[(server_id, user_id)] = user_balance
         print(self.user_data)
-        # balance = self.user_data.get((server_id, user_id), 0)  # Default balance to 0 if not found
 
     @commands.Cog.listener()
     async def on_ready(self):
@@ -43,6 +42,11 @@ class Economy(commands.Cog):
     async def on_message(self, message):
         if message.author == self.bot.user:
             return
+        
+        balance = self.user_data.get((message.guild.id, message.author.id), 0)
+        balance += 1
+        self.user_data[(message.guild.id, message.author.id)] = balance
+        print(balance)
 
     async def earn_currency_by_interacting(self, user_id):
         data = cursor.execute('SELECT balance FROM user_balance WHERE user_id = ?', (user_id,)).fetchone()
