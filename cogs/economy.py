@@ -52,13 +52,7 @@ class Economy(commands.Cog):
         balance = self.user_data.get((message.guild.id, message.author.id), 0.0)
         balance += self.epm + (random.random() * 10 / 100)
         self.user_data[(message.guild.id, message.author.id)] = float("%.2f" % balance)
-        print(f'Total Balance: {float("%.2f" % balance)}')
-
-    async def add_rand_amount():
-        rand_amount = random.random() * 10 # Number 0-10
-        rand_amount = math.floor(rand_amount) / 100
-        print(rand_amount)
-        return rand_amount
+        # print(f'Total Balance: {float("%.2f" % balance)}')
 
     # Task loop stuff
     @tasks.loop(minutes=5.0, reconnect=True)
