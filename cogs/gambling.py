@@ -70,86 +70,81 @@ class Gambling(commands.Cog):
 
     @commands.hybrid_command(name='slots', description='Spin to win!')
     async def slots(self, ctx):
-        try:
-            win_con = {
-                f'{self.emotes["slot1"][0]}': 25,
-                f'{self.emotes["slot1"][1]}': 75,
-                f'{self.emotes["slot1"][2]}': 150,
-                f'{self.emotes["slot1"][3]}': 300,
-                f'{self.emotes["slot1"][4]}': 500
-            }
-            required_amount = 10
-            user_balance = await self.economy.get_user_balance(ctx.guild.id, ctx.author.id)
-            jackpot = await self.get_jackpot(ctx.guild.id, "get", 0)
-            if user_balance < required_amount:
-                await ctx.send("broke ahh", ephemeral=True)
-                return
-            slots = ""
-            for emote in range(1, 4):
-                slots += f'{random.choice(self.emotes[f"slot{emote}"])} '
-            
-            slots_split = slots.split(' ')
-            slots = slots.replace(' ', '')
+        win_con = {
+            f'{self.emotes["slot1"][0]}': 25,
+            f'{self.emotes["slot1"][1]}': 75,
+            f'{self.emotes["slot1"][2]}': 150,
+            f'{self.emotes["slot1"][3]}': 300,
+            f'{self.emotes["slot1"][4]}': 500
+        }
+        required_amount = 10
+        user_balance = await self.economy.get_user_balance(ctx.guild.id, ctx.author.id)
+        jackpot = await self.get_jackpot(ctx.guild.id, "get", 0)
+        if user_balance < required_amount:
+            await ctx.send("broke ahh", ephemeral=True)
+            return
+        slots = ""
+        for emote in range(1, 4):
+            slots += f'{random.choice(self.emotes[f"slot{emote}"])} '
+        
+        slots_split = slots.split(' ')
+        slots = slots.replace(' ', '')
 
+        description = f"""
+            # <:R1_1:1336358772888567868><:R1_2:1336358785802829846><:R1_3:1336358794225127505><:R1_4:1336358802928173067><:R1_5:1336358810918584380>\n
+            # <:R2_1:1336358821530042470>{slots}<:R2_5:1336358832745480233>\n
+            # <:R3_1:1336358841344069725><:R3_2:1336358854044156086><:R3_3:1336358867164205056><:R3_4:1336358885635653786><:R3_5:1336358900471037973>\n
+            # <:R4_1:1336358909299916830><:R4_2:1336358917780930603><:R4_3:1336358929126522932><:R4_4:1336358940635693157><:R4_5:1336358950127538336>\n
+            # <:R5_1:1336359019560042658><:R5_2:1336359027994791997><:R5_3:1336359038895652907><:R5_4:1336359049972678757><:R5_5:1336359059300941935>\n
+        """
+
+        if os.getenv('TOKEN') == os.getenv('DEV'):
             description = f"""
-                # <:R1_1:1336358772888567868><:R1_2:1336358785802829846><:R1_3:1336358794225127505><:R1_4:1336358802928173067><:R1_5:1336358810918584380>\n
-                # <:R2_1:1336358821530042470>{slots}<:R2_5:1336358832745480233>\n
-                # <:R3_1:1336358841344069725><:R3_2:1336358854044156086><:R3_3:1336358867164205056><:R3_4:1336358885635653786><:R3_5:1336358900471037973>\n
-                # <:R4_1:1336358909299916830><:R4_2:1336358917780930603><:R4_3:1336358929126522932><:R4_4:1336358940635693157><:R4_5:1336358950127538336>\n
-                # <:R5_1:1336359019560042658><:R5_2:1336359027994791997><:R5_3:1336359038895652907><:R5_4:1336359049972678757><:R5_5:1336359059300941935>\n
+                # <:R1_1:1333784956459155509><:R1_2:1333784966902845521><:R1_3:1333784977254514738><:R1_4:1333784986133991516><:R1_5:1333784994774253589>\n
+                # <:R2_1:1333780034954989639>{slots}<:R2_5:1333780071382650910>\n
+                # <:R3_1:1333780086113177600><:R3_2:1333780096179372062><:R3_3:1333780106648227881><:R3_4:1333780115959713792><:R3_5:1333780125954609193>\n
+                # <:R4_1:1333780136864251975><:R4_2:1333780143918809100><:R4_3:1333780152202821684><:R4_4:1333780160675319839><:R4_5:1333780168212480010>\n
+                # <:R5_1:1333780176504623114><:R5_2:1333780264564035584><:R5_3:1333780274860789772><:R5_4:1333780283656241256><:R5_5:1333780292246175784>\n
             """
 
-            if os.getenv('TOKEN') == os.getenv('DEV'):
-                description = f"""
-                    # <:R1_1:1333784956459155509><:R1_2:1333784966902845521><:R1_3:1333784977254514738><:R1_4:1333784986133991516><:R1_5:1333784994774253589>\n
-                    # <:R2_1:1333780034954989639>{slots}<:R2_5:1333780071382650910>\n
-                    # <:R3_1:1333780086113177600><:R3_2:1333780096179372062><:R3_3:1333780106648227881><:R3_4:1333780115959713792><:R3_5:1333780125954609193>\n
-                    # <:R4_1:1333780136864251975><:R4_2:1333780143918809100><:R4_3:1333780152202821684><:R4_4:1333780160675319839><:R4_5:1333780168212480010>\n
-                    # <:R5_1:1333780176504623114><:R5_2:1333780264564035584><:R5_3:1333780274860789772><:R5_4:1333780283656241256><:R5_5:1333780292246175784>\n
-                """
-
-            embed = embedBuilder(bot).embed(
-                color=0xffd330,
-                author="Slots",
-                description=description,
-                footer=f"Jackpot value: {jackpot}"
-                )
-            
-            if self.emotes["slot1"].index(slots_split[0]) == self.emotes["slot2"].index(slots_split[1]) == self.emotes["slot3"].index(slots_split[2]):
-                await ctx.send(embed=embed, ephemeral=False)
-                winnings = win_con[f'{slots[0]}']
-                if slots[0] == "✅":
-                    winnings += await self.get_jackpot(ctx.guild.id, "subtract", 0)
-                await self.economy.add_money(winnings, ctx.guild.id, ctx.author.id)
-                await ctx.send(f"You won **{winnings}** {self.economy.currency}!")
-            else:
-                await ctx.send(embed=embed, ephemeral=True)
-                await self.economy.subtract_money(required_amount, ctx.guild.id, ctx.author.id)
-                await ctx.send("You won fuck all!", ephemeral=True)
-                await self.get_jackpot(ctx.guild.id, "add", required_amount)
-        except Exception as e: print(e)
+        embed = embedBuilder(bot).embed(
+            color=0xffd330,
+            author="Slots",
+            description=description,
+            footer=f"Jackpot stash: {jackpot}"
+            )
+        
+        if self.emotes["slot1"].index(slots_split[0]) == self.emotes["slot2"].index(slots_split[1]) == self.emotes["slot3"].index(slots_split[2]):
+            await ctx.send(embed=embed)
+            winnings = win_con[f'{slots_split[0]}']
+            if slots_split[0] == self.emotes["slot1"][4]:
+                winnings += await self.get_jackpot(ctx.guild.id, "subtract", 0)
+            await self.economy.add_money(winnings, ctx.guild.id, ctx.author.id)
+            await ctx.send(f"You won **{winnings}** {self.economy.currency}!")
+        else:
+            await ctx.send(embed=embed, ephemeral=True)
+            await self.economy.subtract_money(required_amount, ctx.guild.id, ctx.author.id)
+            await ctx.send("You won fuck all!", ephemeral=True)
+            await self.get_jackpot(ctx.guild.id, "add", required_amount)
 
     @commands.hybrid_command(name='roulette', description='Bet your life savings away!')
     async def roulette(self, ctx, bet: int):
-        try:
-            user_balance = await self.economy.get_user_balance(ctx.guild.id, ctx.author.id)
-            if user_balance < bet:
-                await ctx.send("broke ahh", ephemeral=True)
-                return
-            elif bet <= 0:
-                await ctx.send("nah uh", ephemeral=True)
-                return
-            bot_user = await self.bot.fetch_user(self.bot._application.id)
-            embed = embedBuilder(bot).embed(
-                color=0xffd330,
-                author="Roulette",
-                author_avatar=bot_user.avatar,
-                description="Choose your bet",
-                thumbnail="https://cdn-icons-png.flaticon.com/512/3425/3425938.png"
-            )
-            await ctx.send(embed=embed, view=RouletteView(self.bot, user_balance, self.gambling_data, ctx.author.id, bet))
-        except Exception as e:
-            print(e)
+        user_balance = await self.economy.get_user_balance(ctx.guild.id, ctx.author.id)
+        if user_balance < bet:
+            await ctx.send("broke ahh", ephemeral=True)
+            return
+        elif bet <= 0:
+            await ctx.send("nah uh", ephemeral=True)
+            return
+        bot_user = await self.bot.fetch_user(self.bot._application.id)
+        embed = embedBuilder(bot).embed(
+            color=0xffd330,
+            author="Roulette",
+            author_avatar=bot_user.avatar,
+            description="Choose your bet",
+            thumbnail="https://cdn-icons-png.flaticon.com/512/3425/3425938.png"
+        )
+        await ctx.send(embed=embed, view=RouletteView(self.bot, user_balance, self.gambling_data, ctx.author.id, bet))
 
     # Methods
 
@@ -280,13 +275,11 @@ class RouletteView(ui.View):
 
     @discord.ui.button( label="Line (Double Street)", style=discord.ButtonStyle.red)
     async def line(self, interaction: discord.Interaction, button: ui.Button):
-        try:
-            if interaction.user.id != self.user_id: return
-            await interaction.message.delete()
-            self.clear_items()
-            self.add_item(self.LineSelect(self.bet, self.economy, self.bot, self.gambling_data, 5))
-            await interaction.response.send_message(view=self)
-        except Exception as e: print(e)
+        if interaction.user.id != self.user_id: return
+        await interaction.message.delete()
+        self.clear_items()
+        self.add_item(self.LineSelect(self.bet, self.economy, self.bot, self.gambling_data, 5))
+        await interaction.response.send_message(view=self)
     
     @discord.ui.button( label="Corner", style=discord.ButtonStyle.red)
     async def corner(self, interaction: discord.Interaction, button: ui.Button):
@@ -306,15 +299,13 @@ class RouletteView(ui.View):
     
     @discord.ui.button( label="Split", style=discord.ButtonStyle.red)
     async def split(self, interaction: discord.Interaction, button: ui.Button):
-        try:
-            if interaction.user.id != self.user_id: return
-            await interaction.response.send_modal(self.SplitSelect(self.bet, self.economy, self.bot, self.gambling_data, 17))
-        except Exception as e: print(e)
+        if interaction.user.id != self.user_id: return
+        await interaction.response.send_modal(self.SplitSelect(self.bet, self.economy, self.bot, self.gambling_data, 17))
     
     @discord.ui.button( label="Straight Up", style=discord.ButtonStyle.red)
     async def straight_up(self, interaction: discord.Interaction, button: ui.Button):
-            if interaction.user.id != self.user_id: return
-            await interaction.response.send_modal(self.StraightSelect(self.bet, self.economy, self.bot, self.gambling_data, 35))
+        if interaction.user.id != self.user_id: return
+        await interaction.response.send_modal(self.StraightSelect(self.bet, self.economy, self.bot, self.gambling_data, 35))
     
     # Methods
 
@@ -423,13 +414,11 @@ class RouletteView(ui.View):
             self.multiplier = multiplier
 
         async def callback(self, interaction: discord.Interaction):
-            try:
-                num = await RouletteView.get_num(interaction)
-                res = False
-                if num >= int(self.values[0]) * 6 - 6 + 1 and num <= 6 * int(self.values[0]):
-                    res = True
-                await RouletteView.send_response(interaction, res, self.bet, num, self.economy, self.bot, self.gambling_data, self.multiplier)
-            except Exception as e: print(e)
+            num = await RouletteView.get_num(interaction)
+            res = False
+            if num >= int(self.values[0]) * 6 - 6 + 1 and num <= 6 * int(self.values[0]):
+                res = True
+            await RouletteView.send_response(interaction, res, self.bet, num, self.economy, self.bot, self.gambling_data, self.multiplier)
 
     class CornerSelect(ui.Select):
         def __init__(self, bet, economy, bot, gambling_data, multiplier):
