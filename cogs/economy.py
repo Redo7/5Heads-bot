@@ -3,16 +3,18 @@ import math
 import random
 import discord
 import sqlite3
+import datetime
+from typing import Optional
 from discord import app_commands
 from discord.ext import commands, tasks
 from discord.app_commands import Choice
 from cogs.recruit import execute_query
+from cogs.embedBuilder import embedBuilder
 
 import os
 from dotenv import find_dotenv, load_dotenv
 dotenv_path = find_dotenv()
 load_dotenv(dotenv_path)
-TOKEN = os.getenv('TOKEN')
 intents = discord.Intents.default()
 intents.message_content = True
 OWNER_ID = int(os.getenv('OWNER_ID'))
@@ -26,7 +28,7 @@ database.execute('CREATE TABLE IF NOT EXISTS user_balance(server_id INT, user_id
 class Economy(commands.Cog):
     def __init__(self, bot):
         self.bot = bot
-        self.currency = "Fetch Name"
+        self.currency = "5Head Coins"
         self.epm = 0.5
         data = cursor.execute("SELECT * FROM user_balance").fetchall()
         self.user_data = {}
@@ -38,7 +40,6 @@ class Economy(commands.Cog):
 
     @commands.Cog.listener()
     async def on_ready(self):
-        print(f"Data ({len(self.user_data)}):{self.user_data}")
         print(f"Economy cog loaded")
 
     @commands.Cog.listener()
@@ -46,37 +47,66 @@ class Economy(commands.Cog):
         if message.author == self.bot.user:
             return
         
-        await self.earn_currency_by_interacting(message)
+        await self.add_money(self.epm + (random.random() * 10 / 100), message.guild.id, message.author.id)
 
-    async def earn_currency_by_interacting(self, message):
-        balance = self.user_data.get((message.guild.id, message.author.id), 0.0)
-        balance += self.epm + (random.random() * 10 / 100)
-        self.user_data[(message.guild.id, message.author.id)] = float("%.2f" % balance)
-        # print(f'Total Balance: {float("%.2f" % balance)}')
+    # Methods
 
-    # Task loop stuff
+    async def add_money(self, add_balance, guild_id, user_id):
+        balance = await self.get_user_balance(guild_id, user_id)
+        balance += add_balance
+        self.user_data[(guild_id, user_id)] = float("%.2f" % balance)
+    
+    async def subtract_money(self, sub_balance, guild_id, user_id):
+        balance = await self.get_user_balance(guild_id, user_id)
+        balance -= sub_balance
+        self.user_data[(guild_id, user_id)] = float("%.2f" % balance)
+
+    async def get_user_balance(self, guild_id, user_id):
+        user_balance = self.user_data.get((guild_id, user_id), 0.0)
+        return user_balance
+
+    # Task Loop
+
     @tasks.loop(minutes=5.0, reconnect=True)
     async def save_economy(self):
-        print("Commiting balance changes to DB")
+        print(f"[{datetime.datetime.now().strftime('%Y-%m-%d %H:%M:%S')}] Commiting balance changes to DB (economy)")
         query = """
             INSERT OR REPLACE INTO user_balance (server_id, user_id, balance)
             VALUES (?, ?, ?)
-        """ # This doesn't work well. It just replicates the entire DB over and over instead of updating the values
+        """
         insert_data = [(server_id, user_id, user_balance) for (server_id, user_id), user_balance in self.user_data.items()]
         with database:
             cursor.executemany(query, insert_data)
+            database.commit()
+
+    def cog_load(self):
+        print("Economy task loop started")
+        self.save_economy.start()
 
     def cog_unload(self):
-        print("Task loop cancelled")
+        print("Economy task loop cancelled")
         self.save_economy.cancel()
-    
-    def cog_load(self):
-        self.save_economy.start()
 
     @save_economy.before_loop
     async def before_loop(self):
         await self.bot.wait_until_ready()
     
+    # Commands
+
+    @commands.hybrid_command(name='balance', brief='Check your balance')
+    async def balance(self, ctx, show_off: Optional[bool]):
+        await self.save_economy()
+        if show_off == None: show_off = False
+        user = await self.bot.fetch_user(ctx.author.id)
+        balance = await self.get_user_balance(ctx.guild.id, ctx.author.id)
+        embed = embedBuilder(bot).embed(
+            color=0xffd330,
+            author=user.display_name,
+            author_avatar=user.avatar,
+            description=f"Your current balance is ***{balance}*** {self.currency}",
+            )
+        await ctx.send(embed=embed, ephemeral=not show_off)
+
     # End
 
 async def setup(bot):

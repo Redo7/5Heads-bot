@@ -1,5 +1,5 @@
 import discord
-from cogs import embedBuilder
+from cogs.embedBuilder import embedBuilder
 from discord import app_commands
 from discord.ext import commands
 from discord.app_commands import Choice
@@ -22,7 +22,7 @@ class discordIntegration(commands.Cog):
 
     async def send_dm(self, user_id, message):
         try:
-            user = await bot.fetch_user(user_id)
+            user = await self.bot.fetch_user(user_id)
             dm_channel = await user.create_dm()
             await dm_channel.send(message)
         except discord.HTTPException as e:
@@ -30,7 +30,7 @@ class discordIntegration(commands.Cog):
 
     async def send_embed(self, user_id, embed):
         try:
-            user = await bot.fetch_user(user_id)
+            user = await self.bot.fetch_user(user_id)
             dm_channel = await user.create_dm() 
             await dm_channel.send(embed=embed.build())
         except discord.HTTPException as e:
@@ -42,8 +42,8 @@ class discordIntegration(commands.Cog):
             Choice(name="No", value=0)
             ])
     async def test_embed(self, ctx, ephemeral: Optional[Choice[int]], title=None, description=None, url=None, color=None, timestamp=None, author=None, author_url=None, author_avatar=None, thumbnail=None, image=None, footer=None, fields=None) -> None:
-        embed = embedBuilder.embed(title=title, description=description, url=url, color=color, timestamp=timestamp, author=author, author_url=author_url, author_avatar=author_avatar, thumbnail=thumbnail, image=image, footer=footer, fields=fields)
-        await ctx.send(embed=embed.build()) if ephemeral == 0 else await ctx.send(embed=embed.build(), ephemeral=True)
+        embed = embedBuilder(bot).embed(title=title, description=description, url=url, color=color, timestamp=timestamp, author=author, author_url=author_url, author_avatar=author_avatar, thumbnail=thumbnail, image=image, footer=footer, fields=fields)
+        await ctx.send(embed=embed) if ephemeral == 0 else await ctx.send(embed=embed, ephemeral=True)
 
 async def setup(bot):
     await bot.add_cog(discordIntegration(bot))

@@ -29,7 +29,7 @@ database.execute('CREATE TABLE IF NOT EXISTS voting(voting_id TEXT, msg TEXT, fo
 class Recruit(commands.Cog):
     def __init__(self, bot):
         self.bot = bot
-        self.recruit_channel = None  # Initialize as None
+        self.recruit_channel = None
 
 
     @commands.Cog.listener()

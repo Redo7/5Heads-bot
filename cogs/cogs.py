@@ -27,6 +27,7 @@ class Cogs(commands.Cog):
         Choice(name="Discord Integration", value="discordIntegration"),
         Choice(name="Economy", value="economy"),
         Choice(name="Embed Builder", value="embedBuilder"),
+        Choice(name="Gambling", value="gambling"),
         Choice(name="Misc", value="misc"),
         Choice(name="On_message", value="on_message"),
         Choice(name="Recruit", value="recruit"),
