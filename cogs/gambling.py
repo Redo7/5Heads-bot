@@ -17,7 +17,7 @@ bot = commands.Bot(command_prefix='!', owner_id=OWNER_ID, intents=intents)
 
 database = sqlite3.connect('db/main.db')
 cursor = database.cursor()
-database.execute('CREATE TABLE IF NOT EXISTS gambling(server_id INT PRIMARY KEY, jackpot INT DEFAULT 1000)')
+database.execute('CREATE TABLE IF NOT EXISTS gambling(server_id INT PRIMARY KEY, jackpot INT DEFAULT 500)')
 
 class Gambling(commands.Cog):
     def __init__(self, bot):
