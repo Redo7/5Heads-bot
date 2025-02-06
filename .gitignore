@@ -161,3 +161,4 @@ cython_debug/
 /config/config.json
 /config/config.db
 /db/
+/Local/

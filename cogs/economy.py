@@ -153,6 +153,7 @@ class Economy(commands.Cog):
         @discord.ui.button(label="Accept", style=discord.ButtonStyle.green)
         async def accept(self, interaction: discord.Interaction, button: ui.Button):
             if interaction.user.id != self.target.id: return
+            await interaction.message.delete()
             if self.amount > await self.economy.get_user_balance(self.guild_id, self.target.id):
                 embed = embedBuilder(bot).embed(
                     color=0xed1b53,
@@ -178,6 +179,7 @@ class Economy(commands.Cog):
         @discord.ui.button(label="Decline", style=discord.ButtonStyle.red)
         async def decline(self, interaction: discord.Interaction, button: ui.Button):
             if interaction.user.id != self.target.id: return
+            await interaction.message.delete()
             embed = embedBuilder(bot).embed(
                 color=0xed1b53,
                 author=self.target.display_name,
