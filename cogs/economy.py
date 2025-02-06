@@ -5,10 +5,8 @@ import discord
 import sqlite3
 import datetime
 from typing import Optional
-from discord import app_commands
 from discord.ext import commands, tasks
-from discord.app_commands import Choice
-from cogs.recruit import execute_query
+from discord import ui
 from cogs.embedBuilder import embedBuilder
 
 import os
@@ -107,6 +105,88 @@ class Economy(commands.Cog):
             )
         await ctx.send(embed=embed, ephemeral=not show_off)
 
+    @commands.hybrid_command(name='sendfunds', brief='Transfer funds to a member')
+    async def send_funds(self, ctx, target: discord.User, amount: int):
+        sender = await self.bot.fetch_user(ctx.author.id)
+        sender_balance = await self.get_user_balance(ctx.guild.id, sender.id)
+        target = await self.bot.fetch_user(target.id)
+
+        if(sender_balance < amount):
+            await ctx.send("You too broke for that")
+            return
+        await self.subtract_money(amount, ctx.guild.id, sender.id)
+        await self.add_money(amount, ctx.guild.id, target.id)
+        embed = embedBuilder(bot).embed(
+            color=0xffd330,
+            author=sender.display_name,
+            author_avatar=sender.display_avatar,
+            title=f"Sent {amount} {self.currency} to {target.display_name}",
+            thumbnail=target.display_avatar,
+            timestamp=f"{datetime.datetime.now().isoformat()}",
+            )
+        await ctx.send(f"{target.mention}", embed=embed)
+
+    @commands.hybrid_command(name='requestfunds', brief='Request funds from a member')
+    async def request_funds(self, ctx, target: discord.User, amount: int):
+        sender = await self.bot.fetch_user(ctx.author.id)
+        target = await self.bot.fetch_user(target.id) # This is the person transfering the funds / the target of the command
+        embed = embedBuilder(bot).embed(
+            color=0xffd330,
+            author=target.display_name,
+            author_avatar=target.display_avatar,
+            title=f"{sender.display_name} requests a transfer of {amount} {self.currency}",
+            thumbnail=sender.display_avatar,
+            timestamp=f"{datetime.datetime.now().isoformat()}",
+            )
+        await ctx.send(f"{target.mention}", embed=embed, view=self.transferView(bot, ctx.guild.id, sender, target, amount, self))
+
+    class transferView(ui.View):
+        def __init__(self, bot, guild_id, sender, target, amount, economy, timeout=180):
+            super().__init__(timeout=timeout)
+            self.bot = bot
+            self.guild_id = guild_id
+            self.sender = sender
+            self.target = target
+            self.amount = amount
+            self.economy = economy
+
+        @discord.ui.button(label="Accept", style=discord.ButtonStyle.green)
+        async def accept(self, interaction: discord.Interaction, button: ui.Button):
+            if interaction.user.id != self.target.id: return
+            if self.amount > await self.economy.get_user_balance(self.guild_id, self.target.id):
+                embed = embedBuilder(bot).embed(
+                    color=0xed1b53,
+                    author=self.sender.display_name,
+                    author_avatar=self.sender.display_avatar,
+                    description=f"Insufficient funds. Transaction did not occur.",
+                    timestamp=f"{datetime.datetime.now().isoformat()}",
+                    )
+                await interaction.response.send_message(embed=embed)
+                return
+            await self.economy.subtract_money(self.amount, self.guild_id, self.target.id)
+            await self.economy.add_money(self.amount, self.guild_id, self.sender.id)
+            embed = embedBuilder(bot).embed(
+                color=0x75FF81,
+                author=self.target.display_name,
+                author_avatar=self.target.display_avatar,
+                title=f"Sent {self.amount} {self.economy.currency} to {self.sender.display_name}",
+                thumbnail=self.sender.display_avatar,
+                timestamp=f"{datetime.datetime.now().isoformat()}",
+                )
+            await interaction.response.send_message(f"{self.sender.mention}", embed=embed)
+        
+        @discord.ui.button(label="Decline", style=discord.ButtonStyle.red)
+        async def decline(self, interaction: discord.Interaction, button: ui.Button):
+            if interaction.user.id != self.target.id: return
+            embed = embedBuilder(bot).embed(
+                color=0xed1b53,
+                author=self.target.display_name,
+                author_avatar=self.target.display_avatar,
+                description=f"Transaction declined.",
+                timestamp=f"{datetime.datetime.now().isoformat()}",
+                )
+            await interaction.response.send_message(f"{self.sender.mention}", embed=embed)
+    
     # End
 
 async def setup(bot):

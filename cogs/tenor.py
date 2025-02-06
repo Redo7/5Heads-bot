@@ -58,38 +58,38 @@ class Tenor(commands.Cog):
         ctx: commands.Context, 
         name: Choice[str], 
         anime: Optional[Choice[int]],
-        target: str = commands.parameter(description="The @ of the person the gif is targetted at")
+        target: discord.User = commands.parameter(description="The @ of the person the gif is targetted at")
         ) -> None:
 
         resp = {
-            'bonk': f'bonks {target}',
-            'chase': f'runs after {target}',
-            'cheer': f'cheers for {target}',
-            'clap': f'claps for {target}',
-            'confused': f'is confused about {target}',
-            'cover someone elses mouth': f"covers {target}'s mouth",
-            'high five': f'high fives {target}',
-            'homie kiss': f'homie kisses {target}',
-            'hug': f'hugs {target}',
-            'kick': f'kicks {target}',
-            'kiss': f'kisses {target}',
+            'bonk': f'bonks {target.mention}',
+            'chase': f'runs after {target.mention}',
+            'cheer': f'cheers for {target.mention}',
+            'clap': f'claps for {target.mention}',
+            'confused': f'is confused about {target.mention}',
+            'cover someone elses mouth': f"covers {target.mention}'s mouth",
+            'high five': f'high fives {target.mention}',
+            'homie kiss': f'homie kisses {target.mention}',
+            'hug': f'hugs {target.mention}',
+            'kick': f'kicks {target.mention}',
+            'kiss': f'kisses {target.mention}',
             'kys': '',
-            'peek': f'peeks at {target}',
-            'throw someone': f'yeets {target}',
-            'sad': f'is sad for {target}',
-            'slapping': f'slaps {target}',
-            'slapping competition': f'slaps {target}',
-            'spit': f'spits on {target}',
-            'wave': f'waves at {target}'
+            'peek': f'peeks at {target.mention}',
+            'throw someone': f'yeets {target.mention}',
+            'sad': f'is sad for {target.mention}',
+            'slapping': f'slaps {target.mention}',
+            'slapping competition': f'slaps {target.mention}',
+            'spit': f'spits on {target.mention}',
+            'wave': f'waves at {target.mention}'
         }
 
         kysRandInt = random.randint(0, 1)
         if name.value == 'kys' and kysRandInt == 1:
-            await ctx.send(f"{target}... You should kill yourself ***NOW***")
+            await ctx.send(f"{target.mention}... You should kill yourself ***NOW***")
             await ctx.send("https://c.tenor.com/sAhYu4Wd7IcAAAAC/tenor.gif")
             return
         elif name.value == 'kys' and kysRandInt == 0:
-            await ctx.send(f"{target}... Keep yourself safe :grin:")
+            await ctx.send(f"{target.mention}... Keep yourself safe :grin:")
             await ctx.send("https://c.tenor.com/isav-uIsV64AAAAC/tenor.gif")
             return
         else:
