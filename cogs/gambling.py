@@ -257,13 +257,11 @@ class RouletteView(ui.View):
     
     @discord.ui.button( label="Dozen", style=discord.ButtonStyle.green)
     async def dozen(self, interaction: discord.Interaction, button: ui.Button):
-        try:
-            if interaction.user.id != self.ctx.author.id: return
-            await interaction.message.delete()
-            self.clear_items()
-            self.add_item(self.DozenSelect(self, "Dozen", 2))
-            await interaction.response.send_message(view=self)
-        except Exception as e: print(e)
+        if interaction.user.id != self.ctx.author.id: return
+        await interaction.message.delete()
+        self.clear_items()
+        self.add_item(self.DozenSelect(self, "Dozen", 2))
+        await interaction.response.send_message(view=self)
     
     @discord.ui.button( label="Column", style=discord.ButtonStyle.green)
     async def column(self, interaction: discord.Interaction, button: ui.Button):
@@ -361,33 +359,29 @@ class RouletteView(ui.View):
     
         @discord.ui.button( label="Forward Result", style=discord.ButtonStyle.primary)
         async def straight_up(self, interaction: discord.Interaction, button: ui.Button):
-            try:
-                await interaction.response.defer()
-                await interaction.edit_original_response(content="Forwarded", embed=None, view=None)
-                await self.ctx.send(embed=self.embed)
-            except Exception as e: print(e)
+            await interaction.response.defer()
+            await interaction.edit_original_response(content="Forwarded", embed=None, view=None)
+            await self.ctx.send(embed=self.embed)
     
     class DozenSelect(ui.Select):
-        try:
-            def __init__(self, instance, bet_type, multiplier):
-                super().__init__(
-                    placeholder='Pick a range',
-                    options=[
-                        discord.SelectOption(label='1-12', value=1),
-                        discord.SelectOption(label='13-24', value=2),
-                        discord.SelectOption(label='25-36', value=3)
-                    ])
-                self.instance = instance
-                self.multiplier = multiplier
-                self.bet_type = bet_type
+        def __init__(self, instance, bet_type, multiplier):
+            super().__init__(
+                placeholder='Pick a range',
+                options=[
+                    discord.SelectOption(label='1-12', value=1),
+                    discord.SelectOption(label='13-24', value=2),
+                    discord.SelectOption(label='25-36', value=3)
+                ])
+            self.instance = instance
+            self.multiplier = multiplier
+            self.bet_type = bet_type
 
-            async def callback(self, interaction: discord.Interaction):
-                num = await RouletteView.get_num(interaction)
-                res = False
-                if self.values[0] == '1' and num <= 12 or self.values[0] == '2' and 13 <= num <= 24 or self.values[0] == '3' and num >= 25:
-                    res = True
-                await RouletteView.send_response(self.instance, interaction, res, num, self.bet_type, self.multiplier)
-        except Exception as e: print(e)
+        async def callback(self, interaction: discord.Interaction):
+            num = await RouletteView.get_num(interaction)
+            res = False
+            if self.values[0] == '1' and num <= 12 or self.values[0] == '2' and 13 <= num <= 24 or self.values[0] == '3' and num >= 25:
+                res = True
+            await RouletteView.send_response(self.instance, interaction, res, num, self.bet_type, self.multiplier)
 
     class ColumnSelect(ui.Select):
         def __init__(self, instance, bet_type, multiplier):
