@@ -188,24 +188,22 @@ class Gambling(commands.Cog):
             description="Choose your bet",
             thumbnail="https://cdn-icons-png.flaticon.com/512/3425/3425938.png"
         )
-        await ctx.send(embed=embed, view=RouletteView(ctx, self.bot, user_balance, self.gambling_data, ctx.author.id, bet))
+        await ctx.send(embed=embed, view=RouletteView(ctx, self.bot, self.economy, self.gambling_data, bet))
 
 class RouletteView(ui.View):
-    def __init__(self, ctx, bot, user_balance, gambling_data, user_id, bet, timeout=180):
+    def __init__(self, ctx, bot, economy, gambling_data, bet, timeout=180):
         super().__init__(timeout=timeout)
         self.ctx = ctx
-        self.user_balance = user_balance
-        self.gambling_data = gambling_data['roulette']
-        self.bot = bot
-        self.economy = bot.get_cog("Economy")
         self.bet = bet
-        self.user_id = user_id
+        self.economy = economy
+        self.bot = bot
+        self.gambling_data = gambling_data['roulette']
 
     # Outside Bets
 
     @discord.ui.button(emoji="🟥", style=discord.ButtonStyle.green)
     async def red(self, interaction: discord.Interaction, button: ui.Button):
-        if interaction.user.id != self.user_id: return
+        if interaction.user.id != self.ctx.author.id: return
         num = await self.get_num(interaction)
         res = False
         if num in self.gambling_data['red']:
@@ -214,7 +212,7 @@ class RouletteView(ui.View):
         
     @discord.ui.button(emoji="⬛", style=discord.ButtonStyle.green)
     async def black(self, interaction: discord.Interaction, button: ui.Button):
-            if interaction.user.id != self.user_id: return
+            if interaction.user.id != self.ctx.author.id: return
             num = await self.get_num(interaction)
             res = False
             if num in self.gambling_data['black']:
@@ -223,7 +221,7 @@ class RouletteView(ui.View):
 
     @discord.ui.button( label="Odd", style=discord.ButtonStyle.green)
     async def green(self, interaction: discord.Interaction, button: ui.Button):
-        if interaction.user.id != self.user_id: return
+        if interaction.user.id != self.ctx.author.id: return
         num = await self.get_num(interaction)
         res = False
         if num % 2 == 1:
@@ -232,7 +230,7 @@ class RouletteView(ui.View):
     
     @discord.ui.button( label="Even", style=discord.ButtonStyle.green)
     async def even(self, interaction: discord.Interaction, button: ui.Button):
-        if interaction.user.id != self.user_id: return
+        if interaction.user.id != self.ctx.author.id: return
         num = await self.get_num(interaction)
         res = False
         if num % 2 == 0:
@@ -241,7 +239,7 @@ class RouletteView(ui.View):
     
     @discord.ui.button( label="High", style=discord.ButtonStyle.green)
     async def high(self, interaction: discord.Interaction, button: ui.Button):
-        if interaction.user.id != self.user_id: return
+        if interaction.user.id != self.ctx.author.id: return
         num = await self.get_num(interaction)
         res = False
         if num > 18:
@@ -250,7 +248,7 @@ class RouletteView(ui.View):
     
     @discord.ui.button( label="Low", style=discord.ButtonStyle.green)
     async def low(self, interaction: discord.Interaction, button: ui.Button):
-        if interaction.user.id != self.user_id: return
+        if interaction.user.id != self.ctx.author.id: return
         num = await self.get_num(interaction)
         res = False
         if num <= 18:
@@ -259,7 +257,7 @@ class RouletteView(ui.View):
     
     @discord.ui.button( label="Dozen", style=discord.ButtonStyle.green)
     async def dozen(self, interaction: discord.Interaction, button: ui.Button):
-        if interaction.user.id != self.user_id: return
+        if interaction.user.id != self.ctx.author.id: return
         await interaction.message.delete()
         self.clear_items()
         self.add_item(self.DozenSelect(self.ctx, self.bet, self.economy, self.bot, self.gambling_data, "Dozen", 2))
@@ -267,7 +265,7 @@ class RouletteView(ui.View):
     
     @discord.ui.button( label="Column", style=discord.ButtonStyle.green)
     async def column(self, interaction: discord.Interaction, button: ui.Button):
-        if interaction.user.id != self.user_id: return
+        if interaction.user.id != self.ctx.author.id: return
         await interaction.message.delete()
         self.clear_items()
         self.add_item(self.ColumnSelect(self.ctx, self.bet, self.economy, self.bot, self.gambling_data, "Column", 2))
@@ -277,7 +275,7 @@ class RouletteView(ui.View):
 
     @discord.ui.button( label="Line (Double Street)", style=discord.ButtonStyle.red)
     async def line(self, interaction: discord.Interaction, button: ui.Button):
-        if interaction.user.id != self.user_id: return
+        if interaction.user.id != self.ctx.author.id: return
         await interaction.message.delete()
         self.clear_items()
         self.add_item(self.LineSelect(self.ctx, self.bet, self.economy, self.bot, self.gambling_data, "Line (Double Street)", 5))
@@ -285,7 +283,7 @@ class RouletteView(ui.View):
     
     @discord.ui.button( label="Corner", style=discord.ButtonStyle.red)
     async def corner(self, interaction: discord.Interaction, button: ui.Button):
-        if interaction.user.id != self.user_id: return
+        if interaction.user.id != self.ctx.author.id: return
         await interaction.message.delete()
         self.clear_items()
         self.add_item(self.CornerSelect(self.ctx, self.bet, self.economy, self.bot, self.gambling_data, "Corner", 8))
@@ -293,7 +291,7 @@ class RouletteView(ui.View):
     
     @discord.ui.button( label="Street", style=discord.ButtonStyle.red)
     async def street(self, interaction: discord.Interaction, button: ui.Button):
-        if interaction.user.id != self.user_id: return
+        if interaction.user.id != self.ctx.author.id: return
         await interaction.message.delete()
         self.clear_items()
         self.add_item(self.StreetSelect(self.ctx, self.bet, self.economy, self.bot, self.gambling_data, "Street", 11))
@@ -301,12 +299,12 @@ class RouletteView(ui.View):
     
     @discord.ui.button( label="Split", style=discord.ButtonStyle.red)
     async def split(self, interaction: discord.Interaction, button: ui.Button):
-        if interaction.user.id != self.user_id: return
+        if interaction.user.id != self.ctx.author.id: return
         await interaction.response.send_modal(self.SplitSelect(self.ctx, self.bet, self.economy, self.bot, self.gambling_data, "Split", 17))
     
     @discord.ui.button( label="Straight Up", style=discord.ButtonStyle.red)
     async def straight_up(self, interaction: discord.Interaction, button: ui.Button):
-        if interaction.user.id != self.user_id: return
+        if interaction.user.id != self.ctx.author.id: return
         await interaction.response.send_modal(self.StraightSelect(self.ctx, self.bet, self.economy, self.bot, self.gambling_data, "Straight Up", 35))
     
     # Methods
