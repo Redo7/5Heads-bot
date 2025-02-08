@@ -361,7 +361,11 @@ class RouletteView(ui.View):
     
         @discord.ui.button( label="Forward Result", style=discord.ButtonStyle.primary)
         async def straight_up(self, interaction: discord.Interaction, button: ui.Button):
-            await self.ctx.send(embed=self.embed)
+            try:
+                await interaction.response.defer()
+                await interaction.edit_original_response(content="Forwarded", embed=None, view=None)
+                await self.ctx.send(embed=self.embed)
+            except Exception as e: print(e)
     
     class DozenSelect(ui.Select):
         try:
