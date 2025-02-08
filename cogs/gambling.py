@@ -572,11 +572,11 @@ class Gambling(commands.Cog):
                 if int(self.number.value) < 0 or int(self.number.value) > 36:
                     await interaction.response.send_message("Number can not be less than 0, or greater than 36")
                     return
-                num = await RouletteView.get_num(interaction)
+                num = await Gambling.RouletteView.get_num(interaction)
                 res = False
                 if num == int(self.number.value):
                     res = True
-                await RouletteView.send_response(self.instance, interaction, res, num, self.bet_type, self.multiplier)
+                await Gambling.RouletteView.send_response(self.instance, interaction, res, num, self.bet_type, self.multiplier)
 
 async def setup(bot):
     await bot.add_cog(Gambling(bot))
