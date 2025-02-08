@@ -336,9 +336,7 @@ class RouletteView(ui.View):
             author="Roulette",
             author_avatar=bot_user.avatar,
             title=res,
-            description=f"""
-            The number was: {await RouletteView.get_color(num, gambling_data)} **{num}**\n
-            {desc}""",
+            description=f"The number was: {await RouletteView.get_color(num, gambling_data)} **{num}**\n{desc}",
             footer=f"{bet_type} • Bet amount: {bet} • Multiplier: {multiplier}"
         )
         await interaction.followup.send(embed=embed, view=RouletteView.ForwardResult(ctx, embed))
