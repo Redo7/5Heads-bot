@@ -132,6 +132,9 @@ class Economy(commands.Cog):
 
     @commands.hybrid_command(name='requestfunds', brief='Request funds from a member')
     async def request_funds(self, ctx, target: discord.User, amount: int):
+        if amount <= 0:
+            await ctx.send("Nah uh")
+            return
         sender = await self.bot.fetch_user(ctx.author.id)
         target = await self.bot.fetch_user(target.id) # This is the person transfering the funds / the target of the command
         embed = embedBuilder(bot).embed(
