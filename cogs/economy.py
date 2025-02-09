@@ -114,6 +114,10 @@ class Economy(commands.Cog):
         if(sender_balance < amount):
             await ctx.send("You too broke for that")
             return
+        if amount <= 0:
+            await ctx.send("Nah uh")
+            return
+        
         await self.subtract_money(amount, ctx.guild.id, sender.id)
         await self.add_money(amount, ctx.guild.id, target.id)
         embed = embedBuilder(bot).embed(
