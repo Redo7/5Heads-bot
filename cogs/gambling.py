@@ -4,7 +4,7 @@ import sqlite3
 import datetime
 from discord.ext import commands, tasks
 from cogs.embedBuilder import embedBuilder
-from discord import ui
+from discord import ui, app_commands
 
 import os
 from dotenv import find_dotenv, load_dotenv
@@ -96,8 +96,8 @@ class Gambling(commands.Cog):
 
     # Slots
 
-    @commands.hybrid_command(name='slots', description='Spin to win!')
-    async def slots(self, ctx):
+    @bot.tree.command(name='slots', description='Spin to win!')
+    async def slots(self, interaction: discord.Interaction):
         win_con = {
             f'{self.emotes["slot1"][0]}': 25,
             f'{self.emotes["slot1"][1]}': 75,
@@ -106,10 +106,10 @@ class Gambling(commands.Cog):
             f'{self.emotes["slot1"][4]}': 500
         }
         required_amount = 10
-        user_balance = await self.economy.get_user_balance(ctx.guild.id, ctx.author.id)
-        jackpot = await self.get_jackpot(ctx.guild.id, "get", 0)
+        user_balance = await self.economy.get_user_balance(interaction.guild_id, interaction.user.id)
+        jackpot = await self.get_jackpot(interaction.guild_id, "get", 0)
         if user_balance < required_amount:
-            await ctx.send("broke ahh", ephemeral=True)
+            await interaction.response.send_message("broke ahh", ephemeral=True)
             return
         slots = ""
         for emote in range(1, 4):
@@ -143,17 +143,17 @@ class Gambling(commands.Cog):
             )
         
         if self.emotes["slot1"].index(slots_split[0]) == self.emotes["slot2"].index(slots_split[1]) == self.emotes["slot3"].index(slots_split[2]):
-            await ctx.send(embed=embed)
+            await interaction.response.send_message(embed=embed)
             winnings = win_con[f'{slots_split[0]}']
             if slots_split[0] == self.emotes["slot1"][4]:
-                winnings += await self.get_jackpot(ctx.guild.id, "subtract", 0)
-            await self.economy.add_money(winnings, ctx.guild.id, ctx.author.id)
-            await ctx.send(f"You won **{winnings}** {self.economy.currency}!")
+                winnings += await self.get_jackpot(interaction.guild_id, "subtract", 0)
+            await self.economy.add_money(winnings, interaction.guild_id, interaction.user.id)
+            await interaction.followup.send(f"You won **{winnings}** {self.economy.currency}!")
         else:
-            await ctx.send(embed=embed, ephemeral=True)
-            await self.economy.subtract_money(required_amount, ctx.guild.id, ctx.author.id)
-            await ctx.send("You won fuck all!", ephemeral=True)
-            await self.get_jackpot(ctx.guild.id, "add", required_amount)
+            await interaction.response.send_message(embed=embed, ephemeral=True)
+            await self.economy.subtract_money(required_amount, interaction.guild_id, interaction.user.id)
+            await interaction.followup.send("You won fuck all!", ephemeral=True)
+            await self.get_jackpot(interaction.guild_id, "add", required_amount)
 
     # Methods
 
