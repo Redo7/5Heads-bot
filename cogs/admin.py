@@ -29,13 +29,13 @@ class Admin(commands.Cog):
         resp = await self.bot.tree.sync()   
         msg = f"Syncing {len(resp)} commands."  
         await ctx.send(msg) 
-        print(msg)  
+        print(msg)
 
     @commands.has_permissions(manage_messages=True)
     @bot.hybrid_command(name='purge', brief='Deletes a specified number of messages from the current channel')
     async def purge(self, ctx, amount: int):
         await ctx.send(f'Purging messages...')
-        deleted = await ctx.channel.purge(limit=amount)
+        deleted = await ctx.channel.purge(limit=amount+1)
         if len(deleted) == 0:
             embed = discord.Embed(title='Purge "complete"', color=0xED1B53)
             embed.description = 'No messages were deleted (bruh)'
@@ -44,6 +44,23 @@ class Admin(commands.Cog):
             embed = discord.Embed(title='Purge complete', color=0x75FF81)
             embed.description = f'{len(deleted)} messages were deleted'
             await ctx.send(embed=embed)
+
+    @commands.has_permissions(manage_messages=True)
+    @commands.hybrid_command(name="safepurge", brief="Reply to a message to delete everything after it")
+    async def safe_purge(self, ctx):
+        if ctx.message.reference:
+            try:
+                reply_message = await ctx.channel.fetch_message(ctx.message.reference.message_id)
+            except discord.NotFound:
+                await ctx.send("Could not find the message.")
+                return
+
+            count = 0
+            async for message in ctx.channel.history(limit=None, after=reply_message):
+                count += 1
+            await self.purge(ctx, count + 1)
+        else:
+            await ctx.send("This command must be used as a reply to a message.")
     
     # @commands.hybrid_command(name='help', brief='Displays the help documentation') # Todo
     # async def help(self, ctx, command_name):
