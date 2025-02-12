@@ -17,7 +17,7 @@ bot = commands.Bot(command_prefix='!', owner_id=OWNER_ID, intents=intents)
 
 database = sqlite3.connect('db/main.db')
 cursor = database.cursor()
-database.execute('CREATE TABLE IF NOT EXISTS gambling(server_id INT PRIMARY KEY, jackpot INT DEFAULT 500)')
+database.execute('CREATE TABLE IF NOT EXISTS gambling(server_id INT PRIMARY KEY, jackpot REAL DEFAULT 500.0)')
 
 class Gambling(commands.Cog):
     def __init__(self, bot):
@@ -154,7 +154,7 @@ class Gambling(commands.Cog):
             await interaction.response.send_message(embed=embed, ephemeral=True)
             await self.economy.subtract_money(required_amount, interaction.guild_id, interaction.user.id)
             await interaction.followup.send("You won fuck all!", ephemeral=True)
-            await self.get_jackpot(interaction.guild_id, "add", required_amount)
+            await self.get_jackpot(interaction.guild_id, "add", required_amount * 0.25)
 
     # Methods
 
@@ -165,7 +165,7 @@ class Gambling(commands.Cog):
             self.gambling_data["jackpot"][server_id] = value
         elif action == "subtract":
             jackpot = value
-            self.gambling_data["jackpot"][server_id] = 500
+            self.gambling_data["jackpot"][server_id] = 500.0
             return jackpot
         elif action == "get":
             return value
