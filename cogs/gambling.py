@@ -163,7 +163,7 @@ class Gambling(commands.Cog):
                 spins_won += 1
                 if eph:
                     eph = False
-                winnings = win_con[f'{slots_split[spin][0]}']
+                winnings += win_con[f'{slots_split[spin][0]}']
                 if slots_split[spin][0] == self.emotes["slot1"][4]:
                     winnings += await self.get_jackpot(interaction.guild_id, "subtract", 0)
                 await self.economy.add_money(winnings, interaction.guild_id, interaction.user.id)
