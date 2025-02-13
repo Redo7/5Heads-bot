@@ -59,6 +59,7 @@ class Economy(commands.Cog):
         self.save_economy.start()
 
     def cog_unload(self):
+        self.save_economy.restart()
         print("Economy task loop cancelled")
         self.save_economy.cancel()
 
