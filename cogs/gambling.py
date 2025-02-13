@@ -102,6 +102,7 @@ class Gambling(commands.Cog):
     async def slots(self, interaction: discord.Interaction, spins: Optional[int]):
         if spins > 4:
             await interaction.response.send_message("You can only do up to 4 spins at a time", ephemeral=True)
+            return
         spins = 1 if spins == None else spins
         win_con = {
             f'{self.emotes["slot1"][0]}': 25,
