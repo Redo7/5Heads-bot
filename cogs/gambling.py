@@ -175,7 +175,7 @@ class Gambling(commands.Cog):
                     followup = "You won fuck all!"
 
         await interaction.response.send_message(embed=embed, ephemeral=eph)
-        await interaction.followup.send(followup, ephemeral=True)
+        await interaction.followup.send(followup, ephemeral=eph)
 
     # Methods
 
