@@ -54,11 +54,11 @@ class Economy(commands.Cog):
             cursor.executemany(query, insert_data)
             database.commit()
 
-    def cog_load(self):
+    async def cog_load(self):
         print("Economy task loop started")
         self.save_economy.start()
 
-    def cog_unload(self):
+    async def cog_unload(self):
         await self.save_economy()
         print("Economy task loop cancelled")
         self.save_economy.cancel()
