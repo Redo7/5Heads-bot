@@ -40,6 +40,35 @@ class Economy(commands.Cog):
     async def on_ready(self):
         print(f"Economy cog loaded")
 
+        # Task Loop
+
+    @tasks.loop(minutes=5.0, reconnect=True)
+    async def save_economy(self):
+        print(f"[{datetime.datetime.now().strftime('%Y-%m-%d %H:%M:%S')}] Commiting balance changes to DB (economy)")
+        query = """
+            INSERT OR REPLACE INTO user_balance (server_id, user_id, balance)
+            VALUES (?, ?, ?)
+        """
+        insert_data = [(server_id, user_id, user_balance) for (server_id, user_id), user_balance in self.user_data.items()]
+        with database:
+            cursor.executemany(query, insert_data)
+            database.commit()
+
+    def cog_load(self):
+        print("Economy task loop started")
+        self.save_economy.start()
+
+    def cog_unload(self):
+        await self.save_economy()
+        print("Economy task loop cancelled")
+        self.save_economy.cancel()
+
+    @save_economy.before_loop
+    async def before_loop(self):
+        await self.bot.wait_until_ready()
+
+    # on message
+
     @commands.Cog.listener()
     async def on_message(self, message):
         if message.author == self.bot.user:
@@ -62,33 +91,6 @@ class Economy(commands.Cog):
     async def get_user_balance(self, guild_id, user_id):
         user_balance = self.user_data.get((guild_id, user_id), 0.0)
         return user_balance
-
-    # Task Loop
-
-    @tasks.loop(minutes=5.0, reconnect=True)
-    async def save_economy(self):
-        print(f"[{datetime.datetime.now().strftime('%Y-%m-%d %H:%M:%S')}] Commiting balance changes to DB (economy)")
-        query = """
-            INSERT OR REPLACE INTO user_balance (server_id, user_id, balance)
-            VALUES (?, ?, ?)
-        """
-        insert_data = [(server_id, user_id, user_balance) for (server_id, user_id), user_balance in self.user_data.items()]
-        with database:
-            cursor.executemany(query, insert_data)
-            database.commit()
-
-    def cog_load(self):
-        print("Economy task loop started")
-        self.save_economy.start()
-
-    def cog_unload(self):
-        self.save_economy()
-        print("Economy task loop cancelled")
-        self.save_economy.cancel()
-
-    @save_economy.before_loop
-    async def before_loop(self):
-        await self.bot.wait_until_ready()
     
     # Commands
 

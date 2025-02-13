@@ -88,7 +88,7 @@ class Gambling(commands.Cog):
         self.save_gambling.start()
 
     def cog_unload(self):
-        self.save_gambling()
+        await self.save_gambling()
         print("Gambling task loop cancelled")
         self.save_gambling.cancel()
 
