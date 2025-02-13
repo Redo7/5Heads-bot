@@ -83,12 +83,11 @@ class Gambling(commands.Cog):
             cursor.executemany(query, insert_data)
             database.commit()
 
-    async def cog_load(self):
+    def cog_load(self):
         print("Gambling task loop started")
         self.save_gambling.start()
 
-    async def cog_unload(self):
-        await self.save_gambling()
+    def cog_unload(self):
         print("Gambling task loop cancelled")
         self.save_gambling.cancel()
 
