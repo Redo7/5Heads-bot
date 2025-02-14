@@ -100,10 +100,10 @@ class Gambling(commands.Cog):
 
     @bot.tree.command(name='slots', description='Spin to win!')
     async def slots(self, interaction: discord.Interaction, spins: Optional[int]):
+        spins = 1 if spins == None else spins
         if spins > 4:
             await interaction.response.send_message("You can only do up to 4 spins at a time", ephemeral=True)
             return
-        spins = 1 if spins == None else spins
         win_con = {
             f'{self.emotes["slot1"][0]}': 25,
             f'{self.emotes["slot1"][1]}': 75,
