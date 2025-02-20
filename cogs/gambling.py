@@ -626,6 +626,7 @@ class Gambling(commands.Cog):
             }
             self.dealer = {}
             self.player = {}
+            self.win_con_sent = False
 
         @discord.ui.button( label="Hit", style=discord.ButtonStyle.green, custom_id="hit")
         async def hit(self, interaction: discord.Interaction, button: ui.Button):
@@ -665,6 +666,7 @@ class Gambling(commands.Cog):
             await self.ctx.send(embed=embed, view=self, ephemeral=True)
 
         async def advance_round(self, interaction, hand):
+            await interaction.response.defer()
             await self.draw_card(self.deck, hand)
             bot_user = await self.bot.fetch_user(self.bot._application.id)
             embed = embedBuilder(self.bot).embed(
@@ -683,7 +685,8 @@ class Gambling(commands.Cog):
                 
             await self.check_win_con(interaction)
             await self.disable_button("double_down")
-            await interaction.response.send_message(embed=embed, view=self, ephemeral=True)
+            if self.win_con_sent is False:
+                await interaction.followup.send(embed=embed, view=self, ephemeral=True)
 
         async def check_win_con(self, interaction):
             win_con = False
@@ -695,6 +698,8 @@ class Gambling(commands.Cog):
             player_cards = await self.convert_hand(self.player)
             player_blackjack = await self.check_cards(player_cards)
 
+            await interaction.edit_original_response(content="Round advanced", embed=None, view=None)
+            
             if dealer_score > 21:
                 win_con = "The dealer busted. You win!"
                 color = 0x75FF81
@@ -721,11 +726,15 @@ class Gambling(commands.Cog):
                     win_con = "The dealer won."
                     color = 0xed1b53
                     await self.economy.subtract_money(self.bet, interaction.guild_id, interaction.user.id)
-                elif player_score - 21 < dealer_score - 21:
+                elif player_score > dealer_score and player_score < 21:
                     win_con = "You win!"
                     color = 0x75FF81
                     await self.economy.add_money(self.bet, interaction.guild_id, interaction.user.id)
-                elif player_score > dealer_score:
+                elif dealer_score > player_score and dealer_score < 21:
+                    win_con = "The dealer won."
+                    color = 0xed1b53
+                    await self.economy.add_money(self.bet, interaction.guild_id, interaction.user.id)
+                elif player_score - 21 < dealer_score - 21:
                     win_con = "You win!"
                     color = 0x75FF81
                     await self.economy.add_money(self.bet, interaction.guild_id, interaction.user.id)
@@ -752,7 +761,8 @@ class Gambling(commands.Cog):
                         """,
                         footer=f"Current bet • {self.bet}"
                     )
-                await interaction.response.send_message(embed=embed, ephemeral=True, view=Gambling.RouletteView.ForwardResult(self.ctx, embed))
+                self.win_con_sent = True
+                await interaction.followup.send(embed=embed, ephemeral=True, view=Gambling.RouletteView.ForwardResult(self.ctx, embed))
                 return
 
         async def draw_card(self, deck, hand):
