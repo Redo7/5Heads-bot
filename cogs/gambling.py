@@ -639,31 +639,53 @@ class Gambling(commands.Cog):
 
         @discord.ui.button(label="Double Down", style=discord.ButtonStyle.red, custom_id="double_down")
         async def double_down(self, interaction: discord.Interaction, button: ui.Button):
+            if await self.economy.get_user_balance(self.ctx.guild.id, self.ctx.author.id) < self.bet * 2:
+                await self.ctx.send("broke ahh", ephemeral=True)
+                return
             self.bet *= 2
             await self.advance_round(interaction, self.player)
             
         # Methods
 
         async def initial_response(self):
-            await self.draw_card(self.deck, self.dealer)
-            await self.draw_card(self.deck, self.player)
-            await self.draw_card(self.deck, self.player)
-            bot_user = await self.bot.fetch_user(self.bot._application.id)
-            embed = embedBuilder(self.bot).embed(
-                    color=0xffd330,
-                    author="Blackjack",
-                    author_avatar=bot_user.avatar,
-                    title="Choose your next move",
-                    description=f"""
-                    # `Dealer: {await self.calculate_score(self.dealer)}`\n
-                    # {self.dealer}\n
-                    # `Player: {await self.calculate_score(self.player)}`\n
-                    # {self.player}
-                    """,
-                    footer=f"Current bet • {self.bet}"
-                )
-            
-            await self.ctx.send(embed=embed, view=self, ephemeral=True)
+            try:
+                await self.draw_card(self.deck, self.dealer)
+                await self.draw_card(self.deck, self.player)
+                await self.draw_card(self.deck, self.player)
+
+                title = "Choose your next move"
+                color = 0xffd330
+                curr_view = self
+
+                dealer_cards = await self.convert_hand(self.dealer)
+                dealer_blackjack = await self.check_cards(dealer_cards)
+
+                player_cards = await self.convert_hand(self.player)
+                player_blackjack = await self.check_cards(player_cards)
+
+                if player_blackjack and dealer_blackjack == False:
+                    title = "You got a blackjack!"
+                    color = 0x75FF81
+                    curr_view = None
+                    await self.economy.add_money(self.bet * 1.5, self.ctx.guild.id, self.ctx.author.id)
+
+                bot_user = await self.bot.fetch_user(self.bot._application.id)
+                embed = embedBuilder(self.bot).embed(
+                        color=color,
+                        author="Blackjack",
+                        author_avatar=bot_user.avatar,
+                        title=title,
+                        description=f"""
+                        # `Dealer: {await self.calculate_score(self.dealer)}`\n
+                        # {self.dealer}\n
+                        # `Player: {await self.calculate_score(self.player)}`\n
+                        # {self.player}
+                        """,
+                        footer=f"Current bet • {self.bet}"
+                    )
+                
+                await self.ctx.send(embed=embed, view=curr_view, ephemeral=True)
+            except Exception as e: print(e)
 
         async def advance_round(self, interaction, hand):
             await interaction.response.defer()
@@ -708,10 +730,6 @@ class Gambling(commands.Cog):
                 win_con = "You busted."
                 color = 0xed1b53
                 await self.economy.subtract_money(self.bet, interaction.guild_id, interaction.user.id)
-            elif player_blackjack and dealer_blackjack == False:
-                win_con = "You got a blackjack!"
-                color = 0x75FF81
-                await self.economy.add_money(self.bet * 1.5, interaction.guild_id, interaction.user.id)
             elif dealer_blackjack and player_blackjack == False:
                 win_con = "The dealer got a blackjack. You lose."
                 color = 0xed1b53
