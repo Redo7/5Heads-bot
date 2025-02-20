@@ -708,6 +708,14 @@ class Gambling(commands.Cog):
                 win_con = "You busted."
                 color = 0xed1b53
                 await self.economy.subtract_money(self.bet, interaction.guild_id, interaction.user.id)
+            elif player_score == 21:
+                win_con = "You win!"
+                color = 0x75FF81
+                await self.economy.add_money(self.bet, interaction.guild_id, interaction.user.id)
+            elif dealer_score == 21:
+                win_con = "The dealer won."
+                color = 0xed1b53
+                await self.economy.subtract_money(self.bet, interaction.guild_id, interaction.user.id)
 
             if dealer_score >= 17 and not win_con:
                 if player_score == dealer_score:
@@ -719,14 +727,6 @@ class Gambling(commands.Cog):
                     await self.economy.add_money(self.bet * 1.5, interaction.guild_id, interaction.user.id)
                 elif dealer_blackjack and player_blackjack == False:
                     win_con = "The dealer got a blackjack. You lose."
-                    color = 0xed1b53
-                    await self.economy.subtract_money(self.bet, interaction.guild_id, interaction.user.id)
-                elif player_score == 21:
-                    win_con = "You win!"
-                    color = 0x75FF81
-                    await self.economy.add_money(self.bet, interaction.guild_id, interaction.user.id)
-                elif dealer_score == 21:
-                    win_con = "The dealer won."
                     color = 0xed1b53
                     await self.economy.subtract_money(self.bet, interaction.guild_id, interaction.user.id)
                 elif player_score > dealer_score and player_score < 21:
