@@ -708,12 +708,12 @@ class Gambling(commands.Cog):
                 win_con = "You busted."
                 color = 0xed1b53
                 await self.economy.subtract_money(self.bet, interaction.guild_id, interaction.user.id)
-            elif player_score == 21:
-                win_con = "You win!"
+            elif player_blackjack and dealer_blackjack == False:
+                win_con = "You got a blackjack!"
                 color = 0x75FF81
-                await self.economy.add_money(self.bet, interaction.guild_id, interaction.user.id)
-            elif dealer_score == 21:
-                win_con = "The dealer won."
+                await self.economy.add_money(self.bet * 1.5, interaction.guild_id, interaction.user.id)
+            elif dealer_blackjack and player_blackjack == False:
+                win_con = "The dealer got a blackjack. You lose."
                 color = 0xed1b53
                 await self.economy.subtract_money(self.bet, interaction.guild_id, interaction.user.id)
 
@@ -721,12 +721,12 @@ class Gambling(commands.Cog):
                 if player_score == dealer_score:
                     win_con = "Nobody won. Bet returned"
                     color = 0xffd330
-                elif player_blackjack and dealer_blackjack == False:
-                    win_con = "You got a blackjack!"
+                elif player_score == 21:
+                    win_con = "You win!"
                     color = 0x75FF81
-                    await self.economy.add_money(self.bet * 1.5, interaction.guild_id, interaction.user.id)
-                elif dealer_blackjack and player_blackjack == False:
-                    win_con = "The dealer got a blackjack. You lose."
+                    await self.economy.add_money(self.bet, interaction.guild_id, interaction.user.id)
+                elif dealer_score == 21:
+                    win_con = "The dealer won."
                     color = 0xed1b53
                     await self.economy.subtract_money(self.bet, interaction.guild_id, interaction.user.id)
                 elif player_score > dealer_score and player_score < 21:
