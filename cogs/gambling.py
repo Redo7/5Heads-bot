@@ -95,6 +95,15 @@ class Gambling(commands.Cog):
     async def before_loop(self):
         await self.bot.wait_until_ready()
 
+    async def check_bet_balance(self, ctx, bet):
+        user_balance = await self.economy.get_user_balance(ctx.guild.id, ctx.author.id)
+        if user_balance < bet:
+            await ctx.send("broke ahh", ephemeral=True)
+            return True
+        elif bet <= 0:
+            await ctx.send("nah uh", ephemeral=True)
+            return True
+
     # Slots
 
     @bot.tree.command(name='slots', description='Spin to win!')
@@ -195,13 +204,7 @@ class Gambling(commands.Cog):
 
     @commands.hybrid_command(name='roulette', description='Bet your life savings away!')
     async def roulette(self, ctx, bet: int):
-        user_balance = await self.economy.get_user_balance(ctx.guild.id, ctx.author.id)
-        if user_balance < bet:
-            await ctx.send("broke ahh", ephemeral=True)
-            return
-        elif bet <= 0:
-            await ctx.send("nah uh", ephemeral=True)
-            return
+        if await self.check_bet_balance(ctx, bet): return
         bot_user = await self.bot.fetch_user(self.bot._application.id)
         embed = embedBuilder(bot).embed(
             color=0xffd330,
@@ -605,6 +608,7 @@ class Gambling(commands.Cog):
 
     @bot.hybrid_command(name='blackjack', description='Spin to win!')
     async def blackjack(self, ctx, bet: int):
+        if await self.check_bet_balance(ctx, bet): return
         await self.Blackjack(self.economy, ctx, self.bot, bet).initial_response()
     
     class Blackjack(ui.View):
@@ -682,64 +686,62 @@ class Gambling(commands.Cog):
             await interaction.response.send_message(embed=embed, view=self, ephemeral=True)
 
         async def check_win_con(self, interaction):
-            try:
-                win_con = False
-                dealer_score = await self.calculate_score(self.dealer)
-                dealer_cards = await self.convert_hand(self.dealer)
-                dealer_blackjack = await self.check_cards(dealer_cards)
+            win_con = False
+            dealer_score = await self.calculate_score(self.dealer)
+            dealer_cards = await self.convert_hand(self.dealer)
+            dealer_blackjack = await self.check_cards(dealer_cards)
 
-                player_score = await self.calculate_score(self.player)
-                player_cards = await self.convert_hand(self.player)
-                player_blackjack = await self.check_cards(player_cards)
+            player_score = await self.calculate_score(self.player)
+            player_cards = await self.convert_hand(self.player)
+            player_blackjack = await self.check_cards(player_cards)
 
-                if dealer_score > 21:
-                    win_con = "The dealer busted. You win!"
+            if dealer_score > 21:
+                win_con = "The dealer busted. You win!"
+                color = 0x75FF81
+                await self.economy.add_money(self.bet, interaction.guild_id, interaction.user.id)
+            elif player_score > 21:
+                win_con = "You busted."
+                color = 0xed1b53
+                await self.economy.subtract_money(self.bet, interaction.guild_id, interaction.user.id)
+
+            if dealer_score >= 17:
+                if player_blackjack and dealer_blackjack == False:
+                    win_con = "You got a blackjack!"
                     color = 0x75FF81
-                    await self.economy.add_money(self.bet, interaction.guild_id, interaction.user.id)
-                elif player_score > 21:
-                    win_con = "You busted."
+                    await self.economy.add_money(self.bet * 1.5, interaction.guild_id, interaction.user.id)
+                elif dealer_blackjack and player_blackjack == False:
+                    win_con = "The dealer got a blackjack. You lose."
                     color = 0xed1b53
                     await self.economy.subtract_money(self.bet, interaction.guild_id, interaction.user.id)
-
-                if dealer_score >= 17:
-                    if player_blackjack and dealer_blackjack == False:
-                        win_con = "You got a blackjack!"
-                        color = 0x75FF81
-                        await self.economy.add_money(self.bet * 1.5, interaction.guild_id, interaction.user.id)
-                    elif dealer_blackjack and player_blackjack == False:
-                        win_con = "The dealer got a blackjack. You lose."
-                        color = 0xed1b53
-                        await self.economy.subtract_money(self.bet, interaction.guild_id, interaction.user.id)
-                    elif player_score > dealer_score:
-                        win_con = "You win!"
-                        color = 0x75FF81
-                        await self.economy.add_money(self.bet, interaction.guild_id, interaction.user.id)
-                    elif player_score == dealer_score:
-                        win_con = "Nobody won. Bet returned"
-                        color = 0xffd330
-                    else:
-                        win_con = "Dealer wins"
-                        color = 0xed1b53
-                        await self.economy.subtract_money(self.bet, interaction.guild_id, interaction.user.id)
-                    
-                if win_con is not False:
-                    bot_user = await self.bot.fetch_user(self.bot._application.id)
-                    embed = embedBuilder(self.bot).embed(
-                            color=color,
-                            author="Blackjack",
-                            author_avatar=bot_user.avatar,
-                            title=win_con,
-                            description=f"""
-                            # `Dealer: {dealer_score}`\n
-                            # {self.dealer}\n
-                            # `Player: {player_score}`\n
-                            # {self.player}
-                            """,
-                            footer=f"Current bet • {self.bet}"
-                        )
-                    await interaction.response.send_message(embed=embed, ephemeral=True, view=Gambling.RouletteView.ForwardResult(self.ctx, embed))
-                    return
-            except Exception as e: print(e)
+                elif player_score > dealer_score:
+                    win_con = "You win!"
+                    color = 0x75FF81
+                    await self.economy.add_money(self.bet, interaction.guild_id, interaction.user.id)
+                elif player_score == dealer_score:
+                    win_con = "Nobody won. Bet returned"
+                    color = 0xffd330
+                else:
+                    win_con = "Dealer wins"
+                    color = 0xed1b53
+                    await self.economy.subtract_money(self.bet, interaction.guild_id, interaction.user.id)
+                
+            if win_con is not False:
+                bot_user = await self.bot.fetch_user(self.bot._application.id)
+                embed = embedBuilder(self.bot).embed(
+                        color=color,
+                        author="Blackjack",
+                        author_avatar=bot_user.avatar,
+                        title=win_con,
+                        description=f"""
+                        # `Dealer: {dealer_score}`\n
+                        # {self.dealer}\n
+                        # `Player: {player_score}`\n
+                        # {self.player}
+                        """,
+                        footer=f"Current bet • {self.bet}"
+                    )
+                await interaction.response.send_message(embed=embed, ephemeral=True, view=Gambling.RouletteView.ForwardResult(self.ctx, embed))
+                return
 
         async def draw_card(self, deck, hand):
             suit = random.choice(list(deck))
