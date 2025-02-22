@@ -38,8 +38,7 @@ class Cogs(commands.Cog):
     @app_commands.choices(name=choices)
     async def reload(self, ctx, name: Choice[str],):
         try:
-            await self.bot.unload_extension(f"cogs.{name.value}")
-            await self.bot.load_extension(f"cogs.{name.value}")
+            await self.bot.reload_extension(f"cogs.{name.value}")
             msg = f"{name.name} cog reloaded"
             await ctx.send(msg)
             print(msg)
