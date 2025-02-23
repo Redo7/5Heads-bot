@@ -48,6 +48,9 @@ class Admin(commands.Cog):
     @commands.has_permissions(manage_messages=True)
     @commands.hybrid_command(name="safepurge", brief="Reply to a message to delete everything after it")
     async def safe_purge(self, ctx):
+        if ctx.interaction is not None:
+            await ctx.send("This command must be invoked with `!safepurge`")
+            return
         if ctx.message.reference:
             try:
                 reply_message = await ctx.channel.fetch_message(ctx.message.reference.message_id)
