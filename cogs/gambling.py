@@ -208,16 +208,12 @@ class Gambling(commands.Cog):
 
     @commands.hybrid_command(name='roulette', description='Bet your life savings away!')
     async def roulette(self, ctx, bet: int):
+        if ctx.interaction is None: 
+            await ctx.send("This command can only be used as `/roulette`", ephemeral=True)
+            return
         if await self.check_bet_balance(ctx, bet): return
-        bot_user = await self.bot.fetch_user(self.bot._application.id)
-        embed = embedBuilder(bot).embed(
-            color=0xffd330,
-            author="Roulette",
-            author_avatar=bot_user.avatar,
-            description="Choose your bet",
-            thumbnail="https://cdn-icons-png.flaticon.com/512/3425/3425938.png"
-        )
-        await ctx.send(embed=embed, view=self.RouletteView(ctx, self.bot, self.economy, self.gambling_data, bet))
+        await self.RouletteView(ctx, self.bot, self.economy, self.gambling_data, bet).initial_response()
+        
 
     class RouletteView(ui.View):
         def __init__(self, ctx, bot, economy, gambling_data, bet, timeout=180):
@@ -230,6 +226,17 @@ class Gambling(commands.Cog):
 
         # Outside Bets
 
+        async def initial_response(self):
+            bot_user = await self.bot.fetch_user(self.bot._application.id)
+            embed = embedBuilder(bot).embed(
+                color=0xffd330,
+                author="Roulette",
+                author_avatar=bot_user.avatar,
+                description="Choose your bet",
+                thumbnail="https://cdn-icons-png.flaticon.com/512/3425/3425938.png"
+            )
+            self.message = await self.ctx.send(embed=embed, view=self, ephemeral=True)
+
         @discord.ui.button(emoji="🟥", style=discord.ButtonStyle.green)
         async def red(self, interaction: discord.Interaction, button: ui.Button):
             if interaction.user.id != self.ctx.author.id: return
@@ -238,6 +245,7 @@ class Gambling(commands.Cog):
             if num in self.gambling_data['red']:
                 res = True
             await self.send_response(self, interaction, res, num, "🟥", 1)
+            await self.message.delete()
             
         @discord.ui.button(emoji="⬛", style=discord.ButtonStyle.green)
         async def black(self, interaction: discord.Interaction, button: ui.Button):
@@ -247,6 +255,7 @@ class Gambling(commands.Cog):
                 if num in self.gambling_data['black']:
                     res = True
                 await self.send_response(self, interaction, res, num, "⬛", 1)
+                await self.message.delete()
 
         @discord.ui.button( label="Odd", style=discord.ButtonStyle.green)
         async def green(self, interaction: discord.Interaction, button: ui.Button):
@@ -256,6 +265,7 @@ class Gambling(commands.Cog):
             if num % 2 == 1:
                 res = True
             await self.send_response(self, interaction, res, num, "Odd", 1)
+            await self.message.delete()
         
         @discord.ui.button( label="Even", style=discord.ButtonStyle.green)
         async def even(self, interaction: discord.Interaction, button: ui.Button):
@@ -265,6 +275,7 @@ class Gambling(commands.Cog):
             if num % 2 == 0:
                 res = True
             await self.send_response(self, interaction, res, num, "Even", 1)
+            await self.message.delete()
         
         @discord.ui.button( label="High", style=discord.ButtonStyle.green)
         async def high(self, interaction: discord.Interaction, button: ui.Button):
@@ -274,6 +285,7 @@ class Gambling(commands.Cog):
             if num > 18:
                 res = True
             await self.send_response(self, interaction, res, num, "High", 1)
+            await self.message.delete()
         
         @discord.ui.button( label="Low", style=discord.ButtonStyle.green)
         async def low(self, interaction: discord.Interaction, button: ui.Button):
@@ -283,65 +295,67 @@ class Gambling(commands.Cog):
             if num <= 18:
                 res = True
             await self.send_response(self, interaction, res, num, "Low", 1)
+            await self.message.delete()
         
         @discord.ui.button( label="Dozen", style=discord.ButtonStyle.green)
         async def dozen(self, interaction: discord.Interaction, button: ui.Button):
             if interaction.user.id != self.ctx.author.id: return
-            await interaction.message.delete()
             self.clear_items()
-            self.add_item(self.DozenSelect(self, "Dozen", 2))
-            await interaction.response.send_message(view=self)
+            self.add_item(self.DozenSelect(self, interaction, "Dozen", 2))
+            await interaction.response.send_message(view=self, ephemeral=True)
+            await self.message.delete()
         
         @discord.ui.button( label="Column", style=discord.ButtonStyle.green)
         async def column(self, interaction: discord.Interaction, button: ui.Button):
             if interaction.user.id != self.ctx.author.id: return
-            await interaction.message.delete()
             self.clear_items()
-            self.add_item(self.ColumnSelect(self, "Column", 2))
-            await interaction.response.send_message(view=self)
+            self.add_item(self.ColumnSelect(self, interaction, "Column", 2))
+            await interaction.response.send_message(view=self, ephemeral=True)
+            await self.message.delete()
 
         # Inside bets
 
         @discord.ui.button( label="Line (Double Street)", style=discord.ButtonStyle.red)
         async def line(self, interaction: discord.Interaction, button: ui.Button):
             if interaction.user.id != self.ctx.author.id: return
-            await interaction.message.delete()
             self.clear_items()
-            self.add_item(self.LineSelect(self, "Line (Double Street)", 5))
-            await interaction.response.send_message(view=self)
+            self.add_item(self.LineSelect(self, interaction, "Line (Double Street)", 5))
+            await interaction.response.send_message(view=self, ephemeral=True)
+            await self.message.delete()
         
         @discord.ui.button( label="Corner", style=discord.ButtonStyle.red)
         async def corner(self, interaction: discord.Interaction, button: ui.Button):
             if interaction.user.id != self.ctx.author.id: return
-            await interaction.message.delete()
             self.clear_items()
-            self.add_item(self.CornerSelect(self, "Corner", 8))
-            await interaction.response.send_message(view=self)
+            self.add_item(self.CornerSelect(self, interaction, "Corner", 8))
+            await interaction.response.send_message(view=self, ephemeral=True)
+            await self.message.delete()
         
         @discord.ui.button( label="Street", style=discord.ButtonStyle.red)
         async def street(self, interaction: discord.Interaction, button: ui.Button):
             if interaction.user.id != self.ctx.author.id: return
-            await interaction.message.delete()
             self.clear_items()
-            self.add_item(self.StreetSelect(self, "Street", 11))
-            await interaction.response.send_message(view=self)
+            self.add_item(self.StreetSelect(self, interaction, "Street", 11))
+            await interaction.response.send_message(view=self, ephemeral=True)
+            await self.message.delete()
         
         @discord.ui.button( label="Split", style=discord.ButtonStyle.red)
         async def split(self, interaction: discord.Interaction, button: ui.Button):
             if interaction.user.id != self.ctx.author.id: return
-            await interaction.response.send_modal(self.SplitSelect(self, "Split", 17))
+            await interaction.response.send_modal(self.SplitSelect(self, interaction, "Split", 17))
+            await self.message.delete()
         
         @discord.ui.button( label="Straight Up", style=discord.ButtonStyle.red)
         async def straight_up(self, interaction: discord.Interaction, button: ui.Button):
             if interaction.user.id != self.ctx.author.id: return
-            await interaction.response.send_modal(self.StraightSelect(self, "Straight Up", 35))
+            await interaction.response.send_modal(self.StraightSelect(self, interaction, "Straight Up", 35))
+            await self.message.delete()
         
         # Methods
 
         @staticmethod
         async def get_num(interaction):
             await interaction.response.defer(ephemeral=True, thinking=True)
-            await interaction.message.delete()
             return random.randint(0, 36)
         
         @staticmethod
@@ -366,7 +380,7 @@ class Gambling(commands.Cog):
                 description=f"The number was: {await Gambling.RouletteView.get_color(num, self.gambling_data)} **{num}**\n{desc}",
                 footer=f"{bet_type} • {self.bet} • {multiplier}x"
             )
-            await interaction.followup.send(embed=embed, view=Gambling.RouletteView.ForwardResult(self.ctx, embed))
+            await interaction.followup.send(embed=embed, view=Gambling.RouletteView.ForwardResult(self.ctx, embed), ephemeral=True)
 
         @staticmethod
         async def get_color(num, gambling_data):
@@ -387,13 +401,13 @@ class Gambling(commands.Cog):
                 self.embed = embed
         
             @discord.ui.button( label="Forward Result", style=discord.ButtonStyle.primary)
-            async def straight_up(self, interaction: discord.Interaction, button: ui.Button):
+            async def forward_result(self, interaction: discord.Interaction, button: ui.Button):
                 await interaction.response.defer()
-                await interaction.edit_original_response(content="Forwarded", embed=None, view=None)
+                await interaction.delete_original_response()
                 await self.ctx.send(embed=self.embed)
         
         class DozenSelect(ui.Select):
-            def __init__(self, instance, bet_type, multiplier):
+            def __init__(self, instance, prev_interaction, bet_type, multiplier):
                 super().__init__(
                     placeholder='Pick a range',
                     options=[
@@ -402,10 +416,12 @@ class Gambling(commands.Cog):
                         discord.SelectOption(label='25-36', value=3)
                     ])
                 self.instance = instance
+                self.prev_interaction = prev_interaction
                 self.multiplier = multiplier
                 self.bet_type = bet_type
 
             async def callback(self, interaction: discord.Interaction):
+                await self.prev_interaction.delete_original_response()
                 num = await Gambling.RouletteView.get_num(interaction)
                 res = False
                 if self.values[0] == '1' and num <= 12 or self.values[0] == '2' and 13 <= num <= 24 or self.values[0] == '3' and num >= 25:
@@ -413,7 +429,7 @@ class Gambling(commands.Cog):
                 await Gambling.RouletteView.send_response(self.instance, interaction, res, num, self.bet_type, self.multiplier)
 
         class ColumnSelect(ui.Select):
-            def __init__(self, instance, bet_type, multiplier):
+            def __init__(self, instance, prev_interaction, bet_type, multiplier):
                 super().__init__(
                     placeholder='Pick a range',
                     options=[
@@ -422,10 +438,12 @@ class Gambling(commands.Cog):
                         discord.SelectOption(label='3,6,9,12,15,18,21,24,27,30,33,36', value=3)
                     ])
                 self.instance = instance
+                self.prev_interaction = prev_interaction
                 self.multiplier = multiplier
                 self.bet_type = bet_type
 
             async def callback(self, interaction: discord.Interaction):
+                await self.prev_interaction.delete_original_response()
                 num = await Gambling.RouletteView.get_num(interaction)
                 res = False
                 if self.values[0] == '1' and num in [1,4,7,10,13,16,19,22,25,28,31,34] or self.values[0] == '2' and num in [2,5,6,8,11,14,17,20,23,26,29,32,35] or self.values[0] == '3' and num in [3,6,9,12,15,18,21,24,27,30,33,36]:
@@ -433,7 +451,7 @@ class Gambling(commands.Cog):
                 await Gambling.RouletteView.send_response(self.instance, interaction, res, num, self.bet_type, self.multiplier)
         
         class LineSelect(ui.Select):
-            def __init__(self, instance, bet_type, multiplier):
+            def __init__(self, instance, prev_interaction, bet_type, multiplier):
                 super().__init__(
                     placeholder='Pick a range',
                     options=[
@@ -445,10 +463,12 @@ class Gambling(commands.Cog):
                         discord.SelectOption(label='31-36', value=6)
                     ])
                 self.instance = instance
+                self.prev_interaction = prev_interaction
                 self.multiplier = multiplier
                 self.bet_type = bet_type
 
             async def callback(self, interaction: discord.Interaction):
+                await self.prev_interaction.delete_original_response()
                 num = await Gambling.RouletteView.get_num(interaction)
                 res = False
                 if num >= int(self.values[0]) * 6 - 6 + 1 and num <= 6 * int(self.values[0]):
@@ -456,7 +476,7 @@ class Gambling(commands.Cog):
                 await Gambling.RouletteView.send_response(self.instance, interaction, res, num, self.bet_type, self.multiplier)
 
         class CornerSelect(ui.Select):
-            def __init__(self, instance, bet_type, multiplier):
+            def __init__(self, instance, prev_interaction, bet_type, multiplier):
                 super().__init__(
                     placeholder='Pick an option',
                     options=[
@@ -484,6 +504,7 @@ class Gambling(commands.Cog):
                         discord.SelectOption(label='32, 33, 35, 36', value='32, 33, 35, 36')
                     ])
                 self.instance = instance
+                self.prev_interaction = prev_interaction
                 self.multiplier = multiplier
                 self.bet_type = bet_type
                 self.corner_bets = [
@@ -512,6 +533,7 @@ class Gambling(commands.Cog):
                 ]
 
             async def callback(self, interaction: discord.Interaction):
+                await self.prev_interaction.delete_original_response()
                 num = await Gambling.RouletteView.get_num(interaction)
                 res = False
                 matching_corners = [corner for corner in self.corner_bets if num in corner]
@@ -520,7 +542,7 @@ class Gambling(commands.Cog):
                 await Gambling.RouletteView.send_response(self.instance, interaction, res, num, self.bet_type, self.multiplier)
 
         class StreetSelect(ui.Select):
-            def __init__(self, instance, bet_type, multiplier):
+            def __init__(self, instance, prev_interaction, bet_type, multiplier):
                 super().__init__(
                     placeholder='Pick a range',
                     options=[
@@ -538,10 +560,12 @@ class Gambling(commands.Cog):
                         discord.SelectOption(label='34-36', value=12)
                     ])
                 self.instance = instance
+                self.prev_interaction = prev_interaction
                 self.multiplier = multiplier
                 self.bet_type = bet_type
 
             async def callback(self, interaction: discord.Interaction):
+                await self.prev_interaction.delete_original_response()
                 num = await Gambling.RouletteView.get_num(interaction)
                 res = False
                 if num >= int(self.values[0]) * 3 - 3 + 1 and num <= 3 * int(self.values[0]):
@@ -549,9 +573,10 @@ class Gambling(commands.Cog):
                 await Gambling.RouletteView.send_response(self.instance, interaction, res, num, self.bet_type, self.multiplier)
         
         class SplitSelect(ui.Modal):
-            def __init__(self, instance, bet_type, multiplier):
+            def __init__(self, instance, prev_interaction, bet_type, multiplier):
                 super().__init__(title="Split Bet")
                 self.instance = instance
+                self.prev_interaction = prev_interaction
                 self.multiplier = multiplier
                 self.bet_type = bet_type
 
@@ -582,9 +607,10 @@ class Gambling(commands.Cog):
                 await Gambling.RouletteView.send_response(self.instance, interaction, res, num, self.bet_type, self.multiplier)
         
         class StraightSelect(ui.Modal):
-            def __init__(self, instance, bet_type, multiplier):
+            def __init__(self, instance, prev_interaction, bet_type, multiplier):
                 super().__init__(title="Straight Bet")
                 self.instance = instance
+                self.prev_interaction = prev_interaction
                 self.multiplier = multiplier
                 self.bet_type = bet_type
 
@@ -655,44 +681,42 @@ class Gambling(commands.Cog):
         # Methods
 
         async def initial_response(self):
-            try:
-                await self.draw_card(self.deck, self.dealer)
-                await self.draw_card(self.deck, self.player)
-                await self.draw_card(self.deck, self.player)
+            await self.draw_card(self.deck, self.dealer)
+            await self.draw_card(self.deck, self.player)
+            await self.draw_card(self.deck, self.player)
 
-                title = "Choose your next move"
-                color = 0xffd330
-                curr_view = self
+            title = "Choose your next move"
+            color = 0xffd330
+            curr_view = self
 
-                dealer_cards = await self.convert_hand(self.dealer)
-                dealer_blackjack = await self.check_cards(dealer_cards)
+            dealer_cards = await self.convert_hand(self.dealer)
+            dealer_blackjack = await self.check_cards(dealer_cards)
 
-                player_cards = await self.convert_hand(self.player)
-                player_blackjack = await self.check_cards(player_cards)
+            player_cards = await self.convert_hand(self.player)
+            player_blackjack = await self.check_cards(player_cards)
 
-                if player_blackjack and dealer_blackjack == False:
-                    title = "You got a blackjack!"
-                    color = 0x75FF81
-                    curr_view = None
-                    await self.economy.add_money(self.bet * 1.5, self.ctx.guild.id, self.ctx.author.id)
+            if player_blackjack and dealer_blackjack == False:
+                title = "You got a blackjack!"
+                color = 0x75FF81
+                curr_view = None
+                await self.economy.add_money(self.bet * 1.5, self.ctx.guild.id, self.ctx.author.id)
 
-                bot_user = await self.bot.fetch_user(self.bot._application.id)
-                embed = embedBuilder(self.bot).embed(
-                        color=color,
-                        author="Blackjack",
-                        author_avatar=bot_user.avatar,
-                        title=title,
-                        description=f"""
-                        # `Dealer: {await self.calculate_score(self.dealer)}`\n
-                        # {self.dealer}\n
-                        # `Player: {await self.calculate_score(self.player)}`\n
-                        # {self.player}
-                        """,
-                        footer=f"Current bet • {self.bet}"
-                    )
-                
-                await self.ctx.send(embed=embed, view=curr_view, ephemeral=True)
-            except Exception as e: print(e)
+            bot_user = await self.bot.fetch_user(self.bot._application.id)
+            embed = embedBuilder(self.bot).embed(
+                    color=color,
+                    author="Blackjack",
+                    author_avatar=bot_user.avatar,
+                    title=title,
+                    description=f"""
+                    # `Dealer: {await self.calculate_score(self.dealer)}`\n
+                    # {self.dealer}\n
+                    # `Player: {await self.calculate_score(self.player)}`\n
+                    # {self.player}
+                    """,
+                    footer=f"Current bet • {self.bet}"
+                )
+            
+            await self.ctx.send(embed=embed, view=curr_view, ephemeral=True)
 
         async def advance_round(self, interaction, hand):
             await interaction.response.defer()
