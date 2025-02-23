@@ -612,7 +612,10 @@ class Gambling(commands.Cog):
 
     @bot.hybrid_command(name='blackjack', description="What's 9 + 10?")
     async def blackjack(self, ctx, bet: int):
-        if await self.check_bet_balance(ctx, bet) or ctx.interaction == None: return
+        if ctx.interaction is None: 
+            await ctx.send("This command can only be used as `/blackjack`", ephemeral=True)
+            return
+        if await self.check_bet_balance(ctx, bet): return
         await self.Blackjack(self.economy, ctx, self.bot, bet).initial_response()
     
     class Blackjack(ui.View):
