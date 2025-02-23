@@ -106,11 +106,14 @@ class Gambling(commands.Cog):
 
     # Slots
 
-    @bot.tree.command(name='slots', description='Spin to win!')
-    async def slots(self, interaction: discord.Interaction, spins: Optional[int]):
+    @commands.hybrid_command(name='slots', description='Spin to win!')
+    async def slots(self, ctx, spins: Optional[int]):
+        if ctx.interaction is None: 
+            await ctx.send("This command can only be used as `/slots`", ephemeral=True)
+            return
         spins = 1 if spins == None else spins
         if spins > 4:
-            await interaction.response.send_message("You can only do up to 4 spins at a time", ephemeral=True)
+            await ctx.send("You can only do up to 4 spins at a time", ephemeral=True)
             return
         win_con = {
             f'{self.emotes["slot1"][0]}': 25,
@@ -120,10 +123,10 @@ class Gambling(commands.Cog):
             f'{self.emotes["slot1"][4]}': 500
         }
         required_amount = 10
-        user_balance = await self.economy.get_user_balance(interaction.guild_id, interaction.user.id)
-        jackpot = await self.get_jackpot(interaction.guild_id, "get", 0)
+        user_balance = await self.economy.get_user_balance(ctx.guild.id, ctx.author.id)
+        jackpot = await self.get_jackpot(ctx.guild.id, "get", 0)
         if user_balance < required_amount * spins:
-            await interaction.response.send_message("broke ahh", ephemeral=True)
+            await ctx.send("broke ahh", ephemeral=True)
             return
 
         description = ""
@@ -174,17 +177,18 @@ class Gambling(commands.Cog):
                     eph = False
                 winnings += win_con[f'{slots_split[spin][0]}']
                 if slots_split[spin][0] == self.emotes["slot1"][4]:
-                    winnings += await self.get_jackpot(interaction.guild_id, "subtract", 0)
-                await self.economy.add_money(winnings, interaction.guild_id, interaction.user.id)
+                    winnings += await self.get_jackpot(ctx.guild.id, "subtract", 0)
+                await self.economy.add_money(winnings, ctx.guild.id, ctx.author.id)
                 followup = f"Winning spins: **{spins_won}**\nYou won: **{winnings}** {self.economy.currency}!"
             else:
-                await self.economy.subtract_money(required_amount, interaction.guild_id, interaction.user.id)
-                await self.get_jackpot(interaction.guild_id, "add", required_amount * 0.25)
+                await self.economy.subtract_money(required_amount, ctx.guild.id, ctx.author.id)
+                await self.get_jackpot(ctx.guild.id, "add", required_amount * 0.25)
                 if spins_won == 0:
                     followup = "You won fuck all!"
 
-        await interaction.response.send_message(embed=embed, ephemeral=eph)
-        await interaction.followup.send(followup, ephemeral=eph)
+        await ctx.send(embed=embed, ephemeral=eph)
+        await ctx.send(followup, ephemeral=eph)
+        
 
     # Methods
 
