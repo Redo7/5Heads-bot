@@ -751,7 +751,7 @@ class Gambling(commands.Cog):
             player_cards = await self.convert_hand(self.player)
             player_blackjack = await self.check_cards(player_cards)
 
-            await interaction.edit_original_response(content="Round advanced", embed=None, view=None)
+            await interaction.delete_original_response()
 
             if dealer_score > 21:
                 win_con = "The dealer busted. You win!"
