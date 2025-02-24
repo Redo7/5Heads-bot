@@ -179,7 +179,7 @@ class Gambling(commands.Cog):
                 if slots_split[spin][0] == self.emotes["slot1"][4]:
                     winnings += await self.get_jackpot(ctx.guild.id, "subtract", 0)
                 await self.economy.add_money(winnings, ctx.guild.id, ctx.author.id)
-                followup = f"Winning spins: **{spins_won}**\nYou won: **{winnings}** {self.economy.currency}!"
+                followup = f"Winning spins: **{spins_won}**\nYou won: **{winnings}** {self.economy.server_data[ctx.guild.id]['currency']}!"
             else:
                 await self.economy.subtract_money(required_amount, ctx.guild.id, ctx.author.id)
                 await self.get_jackpot(ctx.guild.id, "add", required_amount * 0.25)
@@ -362,12 +362,12 @@ class Gambling(commands.Cog):
         async def send_response(self, interaction, res, num, bet_type, multiplier):
             if res == True:
                 res = "You Win!"
-                desc=f"Your winnings: **{self.bet * multiplier} {self.economy.currency}**"
+                desc=f"Your winnings: **{self.bet * multiplier} {self.economy.server_data[self.ctx.guild.id]['currency']}**"
                 color = 0x75FF81
                 await self.economy.add_money(self.bet * multiplier, interaction.guild_id, interaction.user.id)
             else:
                 res = "You Lose!"
-                desc = f"You lost: **{self.bet} {self.economy.currency}**"
+                desc = f"You lost: **{self.bet} {self.economy.server_data[self.ctx.guild.id]['currency']}**"
                 color = 0xed1b53
                 await self.economy.subtract_money(self.bet, interaction.guild_id, interaction.user.id)
 
@@ -713,7 +713,7 @@ class Gambling(commands.Cog):
                     # `Player: {await self.calculate_score(self.player)}`\n
                     # {self.player}
                     """,
-                    footer=f"Current bet • {self.bet}"
+                    footer=f"Current bet • {self.bet} {self.economy.server_data[self.ctx.guild.id]['currency']}"
                 )
             
             await self.ctx.send(embed=embed, view=curr_view, ephemeral=True)

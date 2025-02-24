@@ -117,9 +117,9 @@ class Economy(commands.Cog):
     @bot.hybrid_command(name='epm', brief='Changes the "Earnings Per Message" value for the current server')
     async def epm(self, ctx, amount: float):
         prev_amount = self.server_data[ctx.guild.id]["epm"]
+        self.server_data[ctx.guild.id]["epm"] = amount
         cursor.execute(f"UPDATE economy SET epm = (?) WHERE server_id = (?)", (amount, ctx.guild.id,))
         database.commit()
-        self.server_data[ctx.guild.id]["epm"] = amount
         bot_user = await self.bot.fetch_user(self.bot._application.id)
         embed = embedBuilder(bot).embed(
             color=0xffd330,
@@ -128,15 +128,15 @@ class Economy(commands.Cog):
             description=f"EPM for **`{ctx.guild.name}`** was adjusted to **`{amount}`**",
             footer=f"Previous amount: {prev_amount}"
             )
-        await ctx.send(embed=embed)
+        await ctx.send(embed=embed, ephemeral=True)
 
     @commands.has_permissions(administrator=True)
     @bot.hybrid_command(name='currency', brief='Changes the currency name for the current server')
     async def currency(self, ctx, name: str):
         prev_name = self.server_data[ctx.guild.id]["currency"]
+        self.server_data[ctx.guild.id]["currency"] = name
         cursor.execute(f"UPDATE economy SET currency = (?) WHERE server_id = (?)", (name, ctx.guild.id,))
         database.commit()
-        self.server_data[ctx.guild.id]["currency"] = name
         bot_user = await self.bot.fetch_user(self.bot._application.id)
         embed = embedBuilder(bot).embed(
             color=0xffd330,
@@ -145,7 +145,7 @@ class Economy(commands.Cog):
             description=f"**`{name}`** is now the currency in **`{ctx.guild.name}`**",
             footer=f"Previous name: {prev_name}"
             )
-        await ctx.send(embed=embed)
+        await ctx.send(embed=embed, ephemeral=True)
 
     @commands.hybrid_command(name='sendfunds', brief='Transfer funds to a member')
     async def send_funds(self, ctx, target: discord.User, amount: int):
