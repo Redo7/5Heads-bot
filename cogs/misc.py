@@ -2,6 +2,8 @@ import time
 import random
 import asyncio
 from cogs import config
+from cogs.embedBuilder import embedBuilder
+import datetime
 
 import discord
 from discord import app_commands
@@ -26,8 +28,16 @@ class Misc(commands.Cog):
         context = ""
         for var, val in vars(ctx).items():
             context += f"{var}: {val}\n"
-        print(context)
-        await ctx.send("Done")
+
+        bot_user = await self.bot.fetch_user(self.bot._application.id)
+        embed = embedBuilder(bot).embed(
+                color=0xffd330,
+                author="Context",
+                author_avatar=bot_user.avatar,
+                description=f"```py\n{context}\n```",
+                timestamp=f"{datetime.datetime.now().isoformat()}"
+            )
+        await ctx.send(embed=embed, ephemeral=True)
 
     @bot.hybrid_command(name="widepeepohappy", description="Sends a widepeepoHappy emote")
     async def widepeepohappy(self, ctx: commands.Context) -> None:
