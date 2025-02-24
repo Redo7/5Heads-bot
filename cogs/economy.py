@@ -28,6 +28,12 @@ class Economy(commands.Cog):
         self.bot = bot
         self.currency = "5Head Coins"
         self.epm = 0.5
+        data = cursor.execute("SELECT * FROM economy").fetchall()
+        print(data)
+        self.server_data = {}
+        for entry in data:
+            self.server_data[entry[0]] = {"currency": entry[1], "epm": entry[2]}
+        print(self.server_data)
         data = cursor.execute("SELECT * FROM user_balance").fetchall()
         self.user_data = {}
         for entry in data:
@@ -73,7 +79,7 @@ class Economy(commands.Cog):
         if message.author == self.bot.user:
             return
         
-        await self.add_money(self.epm + (random.random() * 10 / 100), message.guild.id, message.author.id)
+        await self.add_money(self.server_data[message.guild.id]["epm"] + (random.random() * 10 / 100), message.guild.id, message.author.id)
 
     # Methods
 
@@ -103,9 +109,43 @@ class Economy(commands.Cog):
             color=0xffd330,
             author=user.display_name,
             author_avatar=user.avatar,
-            description=f"Your current balance is ***{balance}*** {self.currency}",
+            description=f"Your current balance is ***{balance}*** {self.server_data[ctx.guild.id]['currency']}",
             )
         await ctx.send(embed=embed, ephemeral=not show_off)
+
+    @commands.has_permissions(administrator=True)
+    @bot.hybrid_command(name='epm', brief='Changes the "Earnings Per Message" value for the current server')
+    async def epm(self, ctx, amount: float):
+        prev_amount = self.server_data[ctx.guild.id]["epm"]
+        cursor.execute(f"UPDATE economy SET epm = (?) WHERE server_id = (?)", (amount, ctx.guild.id,))
+        database.commit()
+        self.server_data[ctx.guild.id]["epm"] = amount
+        bot_user = await self.bot.fetch_user(self.bot._application.id)
+        embed = embedBuilder(bot).embed(
+            color=0xffd330,
+            author_avatar=bot_user.avatar,
+            author="5Head",
+            description=f"EPM for **`{ctx.guild.name}`** was adjusted to **`{amount}`**",
+            footer=f"Previous amount: {prev_amount}"
+            )
+        await ctx.send(embed=embed)
+
+    @commands.has_permissions(administrator=True)
+    @bot.hybrid_command(name='currency', brief='Changes the currency name for the current server')
+    async def currency(self, ctx, name: str):
+        prev_name = self.server_data[ctx.guild.id]["currency"]
+        cursor.execute(f"UPDATE economy SET currency = (?) WHERE server_id = (?)", (name, ctx.guild.id,))
+        database.commit()
+        self.server_data[ctx.guild.id]["currency"] = name
+        bot_user = await self.bot.fetch_user(self.bot._application.id)
+        embed = embedBuilder(bot).embed(
+            color=0xffd330,
+            author_avatar=bot_user.avatar,
+            author="5Head",
+            description=f"**`{name}`** is now the currency in **`{ctx.guild.name}`**",
+            footer=f"Previous name: {prev_name}"
+            )
+        await ctx.send(embed=embed)
 
     @commands.hybrid_command(name='sendfunds', brief='Transfer funds to a member')
     async def send_funds(self, ctx, target: discord.User, amount: int):
@@ -126,7 +166,7 @@ class Economy(commands.Cog):
             color=0xffd330,
             author=sender.display_name,
             author_avatar=sender.display_avatar,
-            title=f"Sent {amount} {self.currency} to {target.display_name}",
+            title=f"Sent {amount} {self.server_data[ctx.guild.id]['currency']} to {target.display_name}",
             thumbnail=target.display_avatar,
             timestamp=f"{datetime.datetime.now().isoformat()}",
             )
@@ -143,7 +183,7 @@ class Economy(commands.Cog):
             color=0xffd330,
             author=target.display_name,
             author_avatar=target.display_avatar,
-            title=f"{sender.display_name} requests a transfer of {amount} {self.currency}",
+            title=f"{sender.display_name} requests a transfer of {amount} {self.server_data[ctx.guild.id]['currency']}",
             thumbnail=sender.display_avatar,
             timestamp=f"{datetime.datetime.now().isoformat()}",
             )
