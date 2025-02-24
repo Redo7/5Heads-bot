@@ -29,11 +29,9 @@ class Economy(commands.Cog):
         self.currency = "5Head Coins"
         self.epm = 0.5
         data = cursor.execute("SELECT * FROM economy").fetchall()
-        print(data)
         self.server_data = {}
         for entry in data:
             self.server_data[entry[0]] = {"currency": entry[1], "epm": entry[2]}
-        print(self.server_data)
         data = cursor.execute("SELECT * FROM user_balance").fetchall()
         self.user_data = {}
         for entry in data:
