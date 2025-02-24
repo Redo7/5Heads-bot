@@ -109,8 +109,7 @@ class Gambling(commands.Cog):
     @commands.hybrid_command(name='slots', description='Spin to win!')
     async def slots(self, ctx, spins: Optional[int]):
         if ctx.interaction is None: 
-            await ctx.send("This command can only be used as `/slots`", ephemeral=True)
-            return
+            raise ValueError('This command can only be used as /slots')
         spins = 1 if spins == None else spins
         if spins > 4:
             await ctx.send("You can only do up to 4 spins at a time", ephemeral=True)
@@ -209,8 +208,7 @@ class Gambling(commands.Cog):
     @commands.hybrid_command(name='roulette', description='Bet your life savings away!')
     async def roulette(self, ctx, bet: int):
         if ctx.interaction is None: 
-            await ctx.send("This command can only be used as `/roulette`", ephemeral=True)
-            return
+            raise ValueError('This command can only be used as /roulette')
         if await self.check_bet_balance(ctx, bet): return
         await self.RouletteView(ctx, self.bot, self.economy, self.gambling_data, bet).initial_response()
         
@@ -639,8 +637,7 @@ class Gambling(commands.Cog):
     @bot.hybrid_command(name='blackjack', description="What's 9 + 10?")
     async def blackjack(self, ctx, bet: int):
         if ctx.interaction is None: 
-            await ctx.send("This command can only be used as `/blackjack`", ephemeral=True)
-            return
+            raise ValueError('This command can only be used as /blackjack')
         if await self.check_bet_balance(ctx, bet): return
         await self.Blackjack(self.economy, ctx, self.bot, bet).initial_response()
     
