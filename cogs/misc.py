@@ -1,13 +1,15 @@
 import time
 import random
 import asyncio
+import datetime
+import requests
 from cogs import config
 from cogs.embedBuilder import embedBuilder
-import datetime
 
 import discord
 from discord import app_commands
 from discord.ext import commands
+from discord.app_commands import Choice
 
 import os
 OWNER_ID = os.getenv('OWNER_ID')
@@ -22,6 +24,30 @@ class Misc(commands.Cog):
     @commands.Cog.listener()
     async def on_ready(self):
         print(f"Misc cog loaded")
+
+    @bot.hybrid_command(name="cooltext", description="Generate a text image from cooltext.com")
+    @app_commands.choices(text_type=[
+        Choice(name="Animated Glow", value="1"),
+        Choice(name="Blinkie", value="2"),
+        Choice(name="Burning", value="3"),
+        Choice(name="Flaming", value="4"),
+        Choice(name="Glitter", value="5"),
+        Choice(name="Love", value="6"),
+        Choice(name="Molten Core", value="7")
+    ])
+    async def cooltext(self, ctx, text_type: Choice[str], text):
+        endpoints = {
+            "Animated Glow": f"LogoID=26&Text={text}&FontSize=70&Color1_color=%23000000&Color2_color=%23FFFFFF&Color3_color=%23000000&Integer9=0&Integer13=on&Integer12=on&BackgroundColor_color=%23FFFFFF",
+            "Blinkie": f"LogoID=819515844&Text={text}&FontSize=50&Color1_color=%23A34386&Integer1=25&Color2_color=%23FFFFFF&Integer9=0&Integer13=on&Integer12=on&BackgroundColor_color=%23000000",
+            "Burning": f"LogoID=4&Text={text}&FontSize=70&Color1_color=%23ff0000&Integer1=15&Boolean1=on&Integer9=0&Integer13=on&Integer12=on&BackgroundColor_color=%23ffffff",
+            "Flaming": f"LogoID=1169711118&Text={text}&FontSize=90&Color1_color=%234D0000&Integer1=90&Integer9=0&Integer13=on&Integer12=on&BackgroundColor_color=%23FFFFFF",
+            "Glitter": f"LogoID=44&Text={text}&FontSize=50&Color1_color=%23FF00AB&Integer1=100&Color2_color=%23FFFFFF&Integer9=0&Integer13=on&Integer12=on&BackgroundColor_color=%23FFB6E7",
+            "Love": f"LogoID=4768360740&Text={text}&FontSize=70&Color1_color=%23FF1491&Color2_color=%23FFFFFF&Color3_color=%23FF1491&Integer9=0&Integer13=on&Integer12=on&BackgroundColor_color=%23FFFFFF",
+            "Molten Core": f"LogoID=43&Text={text}&FontSize=70&Integer9=0&Integer13=on&Integer12=on&BackgroundColor_color=%23FFFFFF"
+        }
+
+        req = requests.post(f"https://cooltext.com/PostChange?{endpoints[text_type.name]}").json()
+        await ctx.send(req['renderLocation'].replace('https', 'http'))
 
     @bot.hybrid_command(name="context", description="Log message context")
     async def context_misc(self, ctx: commands.Context) -> None:
