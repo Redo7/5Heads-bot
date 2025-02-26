@@ -27,19 +27,6 @@ class Gambling(commands.Cog):
         self.economy = bot.get_cog("Economy")
         self.emotes = {}
         self.gambling_data = {}
-        
-        # self.emotes = {
-        #     "slot1": ["<a:despairge1:1336359123016749067>", "<a:kys1:1336359185725784164>", "<a:widepeepohappy1:1336359213579894795>", "<a:7271:1336359092125696000>", "<a:jackpot1:1336359154012389428>"],
-        #     "slot2": ["<a:despairge2:1336359131216478299>", "<a:kys2:1336359195225886782>", "<a:widepeepohappy2:1336359223264808991>", "<a:7272:1336359103156588584>", "<a:jackpot2:1336359167522373653>"],
-        #     "slot3": ["<a:despairge3:1336359144214630452>", "<a:kys3:1336359203299790878>", "<a:widepeepohappy3:1336359231636635662>", "<a:7273:1336359112660877403>", "<a:jackpot3:1336359177395634219>"]
-        # }
-
-        # if os.getenv('TOKEN') == os.getenv('DEV'):
-        #     self.emotes = {
-        #     "slot1": ["<a:despairge1:1336349534552330270>", "<a:kys1:1336349591636934831>", "<a:widepeepohappy1:1336349619256295506>", "<a:7271:1336349465690247208>", "<a:jackpot1:1336349564403322912>"],
-        #     "slot2": ["<a:despairge2:1336349544790622330>", "<a:kys2:1336349602265432074>", "<a:widepeepohappy2:1336349628492419102>", "<a:7272:1336349515774431334>", "<a:jackpot2:1336349573953749023>"],
-        #     "slot3": ["<a:despairge3:1336349553061793944>", "<a:kys3:1336349611639570506>", "<a:widepeepohappy3:1336349636255944746>", "<a:7273:1336349524985122957>", "<a:jackpot3:1336349581679530007>"]
-        # } 
     
     @commands.Cog.listener()
     async def on_ready(self):
@@ -646,12 +633,13 @@ class Gambling(commands.Cog):
         if ctx.interaction is None: 
             raise ValueError('This command can only be used as /blackjack')
         if await self.check_bet_balance(ctx, bet): return
-        await self.Blackjack(self.economy, ctx, self.bot, bet).initial_response()
+        await self.Blackjack(self.economy, self.emotes, ctx, self.bot, bet).initial_response()
     
     class Blackjack(ui.View):
-        def __init__(self, economy, ctx, bot, bet, timeout=180):
+        def __init__(self, economy, emotes, ctx, bot, bet, timeout=180):
             super().__init__(timeout=timeout)
             self.economy = economy
+            self.emotes = emotes
             self.ctx = ctx
             self.bot = bot
             self.bet = bet
@@ -688,7 +676,6 @@ class Gambling(commands.Cog):
             await self.draw_card(self.deck, self.dealer)
             await self.draw_card(self.deck, self.player)
             await self.draw_card(self.deck, self.player)
-            await self.display_cards(self.dealer)
 
             title = "Choose your next move"
             color = 0xffd330
@@ -714,9 +701,9 @@ class Gambling(commands.Cog):
                     title=title,
                     description=f"""
                     # `Dealer: {await self.calculate_score(self.dealer)}`\n
-                    # {self.dealer}\n
+                    # {await self.display_cards(self.dealer)}\n
                     # `Player: {await self.calculate_score(self.player)}`\n
-                    # {self.player}
+                    # {await self.display_cards(self.player)}
                     """,
                     footer=f"Current bet • {self.bet} {self.economy.server_data[self.ctx.guild.id]['currency']}"
                 )
@@ -734,11 +721,11 @@ class Gambling(commands.Cog):
                     title="Choose your next move",
                     description=f"""
                     # `Dealer: {await self.calculate_score(self.dealer)}`\n
-                    # {self.dealer}\n
+                    # {await self.display_cards(self.dealer)}\n
                     # `Player: {await self.calculate_score(self.player)}`\n
-                    # {self.player}
+                    # {await self.display_cards(self.player)}
                     """,
-                    footer=f"Current bet • {self.bet}"
+                    footer=f"Current bet • {self.bet} {self.economy.server_data[self.ctx.guild.id]['currency']}"
                 )
                 
             await self.check_win_con(interaction)
@@ -809,11 +796,11 @@ class Gambling(commands.Cog):
                         title=win_con,
                         description=f"""
                         # `Dealer: {dealer_score}`\n
-                        # {self.dealer}\n
+                        # {await self.display_cards(self.dealer)}\n
                         # `Player: {player_score}`\n
-                        # {self.player}
+                        # {await self.display_cards(self.player)}
                         """,
-                        footer=f"Current bet • {self.bet}"
+                        footer=f"Current bet • {self.bet} {self.economy.server_data[self.ctx.guild.id]['currency']}"
                     )
                 self.win_con_sent = True
                 await interaction.followup.send(embed=embed, ephemeral=True, view=Gambling.RouletteView.ForwardResult(self.ctx, embed))
@@ -832,6 +819,14 @@ class Gambling(commands.Cog):
             score = 0
             score += sum(await self.convert_hand(hand))
             return score
+        
+        async def display_cards(self, hand):
+            display = ""
+            for suit in hand.items():
+                for card in suit[1]:
+                    card = card[0] if card in ["Ace", "Jack", "Queen", "King"] else card
+                    display += f"<:{suit[0]}_{card}:{self.emotes[f'{suit[0]}_{card}']}>"
+            return display
         
         async def convert_hand(self, hand):
             values = []
