@@ -70,7 +70,7 @@ class Recruit(commands.Cog):
             )
         try:
             # Dispatch
-            voting_msg = await self.recruit_channel.send(embed=embed, view=MyView(uid))
+            voting_msg = await self.recruit_channel.send(embed=embed, view=RecruitView(uid))
             await execute_query(f'UPDATE voting SET msg = ({voting_msg.id}) WHERE voting_id = ("{uid}")')
             await ctx.send(f"Voting posted in {self.recruit_channel.jump_url}", ephemeral=True)
         except Exception as e:
@@ -106,13 +106,13 @@ class Recruit(commands.Cog):
             await ctx.send("I do not have the necessary permissions to delete this message.", ephemeral=True)
 
 # View Setup
-class MyView(View):
+class RecruitView(View):
     def __init__(self, uid, timeout=None):
         super().__init__(timeout=timeout)
         self.uid = uid
 
     @discord.ui.button(emoji="✅", label="Vote For", style=discord.ButtonStyle.green)
-    async def button_1_callback(self, interaction: discord.Interaction, button: discord.ui.Button):
+    async def vote_for(self, interaction: discord.Interaction, button: discord.ui.Button):
         try:
             await interaction.response.defer(ephemeral=True, thinking=True)
             data = cursor.execute('SELECT * FROM voting WHERE voting_id = ?', (self.uid,)).fetchall()
@@ -124,7 +124,7 @@ class MyView(View):
         except Exception as e: print(e)
 
     @discord.ui.button(emoji="✖️", label="Vote Against", style=discord.ButtonStyle.red)
-    async def button_2_callback(self, interaction: discord.Interaction, button: discord.ui.Button):
+    async def vote_against(self, interaction: discord.Interaction, button: discord.ui.Button):
         try:
             await interaction.response.defer(ephemeral=True, thinking=True)
             data = cursor.execute('SELECT * FROM voting WHERE voting_id = ?', (self.uid,)).fetchall()
