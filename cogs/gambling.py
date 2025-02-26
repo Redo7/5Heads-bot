@@ -2,6 +2,7 @@ import random
 import discord
 import sqlite3
 import datetime
+import requests
 from typing import Optional
 from discord.ext import commands, tasks
 from cogs.embedBuilder import embedBuilder
@@ -24,31 +25,21 @@ class Gambling(commands.Cog):
     def __init__(self, bot):
         self.bot = bot
         self.economy = bot.get_cog("Economy")
-        self.gambling_data = {
-            "jackpot": {},
-            "roulette": {
-                "green": [0],
-                "black": [2,4,6,8,10,11,13,15,17,20,22,24,26,28,29,31,33,35],
-                "red": [1,3,5,7,9,12,14,16,18,19,21,23,25,27,30,32,34,36]
-            }
-        }
-        data = cursor.execute("SELECT * FROM gambling").fetchall()
-        for entry in data:
-            server_id = entry[0]
-            amount = entry[1]
-            self.gambling_data["jackpot"][server_id] = amount
-        self.emotes = {
-            "slot1": ["<a:despairge1:1336359123016749067>", "<a:kys1:1336359185725784164>", "<a:widepeepohappy1:1336359213579894795>", "<a:7271:1336359092125696000>", "<a:jackpot1:1336359154012389428>"],
-            "slot2": ["<a:despairge2:1336359131216478299>", "<a:kys2:1336359195225886782>", "<a:widepeepohappy2:1336359223264808991>", "<a:7272:1336359103156588584>", "<a:jackpot2:1336359167522373653>"],
-            "slot3": ["<a:despairge3:1336359144214630452>", "<a:kys3:1336359203299790878>", "<a:widepeepohappy3:1336359231636635662>", "<a:7273:1336359112660877403>", "<a:jackpot3:1336359177395634219>"]
-        }
+        self.emotes = {}
+        self.gambling_data = {}
+        
+        # self.emotes = {
+        #     "slot1": ["<a:despairge1:1336359123016749067>", "<a:kys1:1336359185725784164>", "<a:widepeepohappy1:1336359213579894795>", "<a:7271:1336359092125696000>", "<a:jackpot1:1336359154012389428>"],
+        #     "slot2": ["<a:despairge2:1336359131216478299>", "<a:kys2:1336359195225886782>", "<a:widepeepohappy2:1336359223264808991>", "<a:7272:1336359103156588584>", "<a:jackpot2:1336359167522373653>"],
+        #     "slot3": ["<a:despairge3:1336359144214630452>", "<a:kys3:1336359203299790878>", "<a:widepeepohappy3:1336359231636635662>", "<a:7273:1336359112660877403>", "<a:jackpot3:1336359177395634219>"]
+        # }
 
-        if os.getenv('TOKEN') == os.getenv('DEV'):
-            self.emotes = {
-            "slot1": ["<a:despairge1:1336349534552330270>", "<a:kys1:1336349591636934831>", "<a:widepeepohappy1:1336349619256295506>", "<a:7271:1336349465690247208>", "<a:jackpot1:1336349564403322912>"],
-            "slot2": ["<a:despairge2:1336349544790622330>", "<a:kys2:1336349602265432074>", "<a:widepeepohappy2:1336349628492419102>", "<a:7272:1336349515774431334>", "<a:jackpot2:1336349573953749023>"],
-            "slot3": ["<a:despairge3:1336349553061793944>", "<a:kys3:1336349611639570506>", "<a:widepeepohappy3:1336349636255944746>", "<a:7273:1336349524985122957>", "<a:jackpot3:1336349581679530007>"]
-        }
+        # if os.getenv('TOKEN') == os.getenv('DEV'):
+        #     self.emotes = {
+        #     "slot1": ["<a:despairge1:1336349534552330270>", "<a:kys1:1336349591636934831>", "<a:widepeepohappy1:1336349619256295506>", "<a:7271:1336349465690247208>", "<a:jackpot1:1336349564403322912>"],
+        #     "slot2": ["<a:despairge2:1336349544790622330>", "<a:kys2:1336349602265432074>", "<a:widepeepohappy2:1336349628492419102>", "<a:7272:1336349515774431334>", "<a:jackpot2:1336349573953749023>"],
+        #     "slot3": ["<a:despairge3:1336349553061793944>", "<a:kys3:1336349611639570506>", "<a:widepeepohappy3:1336349636255944746>", "<a:7273:1336349524985122957>", "<a:jackpot3:1336349581679530007>"]
+        # } 
     
     @commands.Cog.listener()
     async def on_ready(self):
@@ -82,7 +73,7 @@ class Gambling(commands.Cog):
         with database:
             cursor.executemany(query, insert_data)
             database.commit()
-
+    
     def cog_load(self):
         print("Gambling task loop started")
         self.save_gambling.start()
@@ -94,6 +85,33 @@ class Gambling(commands.Cog):
     @save_gambling.before_loop
     async def before_loop(self):
         await self.bot.wait_until_ready()
+        url = f"https://discord.com/api/v10/applications/{self.bot._application.id}/emojis"
+        headers = {
+            "Authorization": f"Bot {os.getenv('TOKEN')}"
+        }
+        response = requests.get(url, headers=headers).json()
+        for emote in response["items"]:
+            self.emotes[emote["name"]] = emote["id"]
+        
+        self.gambling_data = {
+            "jackpot": {},
+            "slots": {
+            "slot1": [f"<a:despairge1:{self.emotes['despairge1']}>", f"<a:kys1:{self.emotes['kys1']}>", f"<a:widepeepohappy1:{self.emotes['widepeepohappy1']}>", f"<a:7271:{self.emotes['7271']}>", f"<a:jackpot1:{self.emotes['jackpot1']}>"],
+            "slot2": [f"<a:despairge2:{self.emotes['despairge2']}>", f"<a:kys2:{self.emotes['kys2']}>", f"<a:widepeepohappy2:{self.emotes['widepeepohappy2']}>", f"<a:7272:{self.emotes['7272']}>", f"<a:jackpot2:{self.emotes['jackpot2']}>"],
+            "slot3": [f"<a:despairge3:{self.emotes['despairge3']}>", f"<a:kys3:{self.emotes['kys3']}>", f"<a:widepeepohappy3:{self.emotes['widepeepohappy3']}>", f"<a:7273:{self.emotes['7273']}>", f"<a:jackpot3:{self.emotes['jackpot3']}>"]
+            },
+            "roulette": {
+                "green": [0],
+                "black": [2,4,6,8,10,11,13,15,17,20,22,24,26,28,29,31,33,35],
+                "red": [1,3,5,7,9,12,14,16,18,19,21,23,25,27,30,32,34,36]
+            }
+        }
+
+        data = cursor.execute("SELECT * FROM gambling").fetchall()
+        for entry in data:
+            server_id = entry[0]
+            amount = entry[1]
+            self.gambling_data["jackpot"][server_id] = amount
 
     async def check_bet_balance(self, ctx, bet):
         user_balance = await self.economy.get_user_balance(ctx.guild.id, ctx.author.id)
@@ -115,11 +133,11 @@ class Gambling(commands.Cog):
             await ctx.send("You can only do up to 4 spins at a time", ephemeral=True)
             return
         win_con = {
-            f'{self.emotes["slot1"][0]}': 25,
-            f'{self.emotes["slot1"][1]}': 75,
-            f'{self.emotes["slot1"][2]}': 150,
-            f'{self.emotes["slot1"][3]}': 300,
-            f'{self.emotes["slot1"][4]}': 500
+            f'{self.gambling_data["slots"]["slot1"][0]}': 25,
+            f'{self.gambling_data["slots"]["slot1"][1]}': 75,
+            f'{self.gambling_data["slots"]["slot1"][2]}': 150,
+            f'{self.gambling_data["slots"]["slot1"][3]}': 300,
+            f'{self.gambling_data["slots"]["slot1"][4]}': 500
         }
         required_amount = 10
         user_balance = await self.economy.get_user_balance(ctx.guild.id, ctx.author.id)
@@ -133,30 +151,20 @@ class Gambling(commands.Cog):
         for spin in range(1, spins + 1):
             slots = ""
             for emote in range(1, 4):
-                slots += f'{random.choice(self.emotes[f"slot{emote}"])} '
+                slots += f'{random.choice(self.gambling_data["slots"][f"slot{emote}"])} '
             
             slots_split += [slots.split(' ')]
             slots = slots.replace(' ', '')
-            if self.emotes["slot1"].index(slots_split[spin - 1][0]) == self.emotes["slot2"].index(slots_split[spin - 1][1]) == self.emotes["slot3"].index(slots_split[spin - 1][2]):
+            if self.gambling_data["slots"]["slot1"].index(slots_split[spin - 1][0]) == self.gambling_data["slots"]["slot2"].index(slots_split[spin - 1][1]) == self.gambling_data["slots"]["slot3"].index(slots_split[spin - 1][2]):
                 spin = f"{spin} ✅"
-            if os.getenv('TOKEN') == os.getenv('DEV'):
-                description += f"""
-                    # `Spin #{spin}`\n
-                    # <:R1_1:1333784956459155509><:R1_2:1333784966902845521><:R1_3:1333784977254514738><:R1_4:1333784986133991516><:R1_5:1333784994774253589>\n
-                    # <:R2_1:1333780034954989639>{slots}<:R2_5:1333780071382650910>\n
-                    # <:R3_1:1333780086113177600><:R3_2:1333780096179372062><:R3_3:1333780106648227881><:R3_4:1333780115959713792><:R3_5:1333780125954609193>\n
-                    # <:R4_1:1333780136864251975><:R4_2:1333780143918809100><:R4_3:1333780152202821684><:R4_4:1333780160675319839><:R4_5:1333780168212480010>\n
-                    # <:R5_1:1333780176504623114><:R5_2:1333780264564035584><:R5_3:1333780274860789772><:R5_4:1333780283656241256><:R5_5:1333780292246175784>\n
-                """
-            else:
-                description += f"""
-                    # `Spin #{spin}`\n
-                    # <:R1_1:1336358772888567868><:R1_2:1336358785802829846><:R1_3:1336358794225127505><:R1_4:1336358802928173067><:R1_5:1336358810918584380>\n
-                    # <:R2_1:1336358821530042470>{slots}<:R2_5:1336358832745480233>\n
-                    # <:R3_1:1336358841344069725><:R3_2:1336358854044156086><:R3_3:1336358867164205056><:R3_4:1336358885635653786><:R3_5:1336358900471037973>\n
-                    # <:R4_1:1336358909299916830><:R4_2:1336358917780930603><:R4_3:1336358929126522932><:R4_4:1336358940635693157><:R4_5:1336358950127538336>\n
-                    # <:R5_1:1336359019560042658><:R5_2:1336359027994791997><:R5_3:1336359038895652907><:R5_4:1336359049972678757><:R5_5:1336359059300941935>\n
-                """
+            description += f"""
+                # `Spin #{spin}`\n
+                # <:R1_1:{self.emotes["R1_1"]}><:R1_2:{self.emotes["R1_2"]}><:R1_3:{self.emotes["R1_3"]}><:R1_4:{self.emotes["R1_4"]}><:R1_5:{self.emotes["R1_5"]}>\n
+                # <:R2_1:{self.emotes["R2_1"]}>{slots}<:R2_5:{self.emotes["R2_5"]}>\n
+                # <:R3_1:{self.emotes["R3_1"]}><:R3_2:{self.emotes["R3_2"]}><:R3_3:{self.emotes["R3_3"]}><:R3_4:{self.emotes["R3_4"]}><:R3_5:{self.emotes["R3_5"]}>\n
+                # <:R4_1:{self.emotes["R4_1"]}><:R4_2:{self.emotes["R4_2"]}><:R4_3:{self.emotes["R4_3"]}><:R4_4:{self.emotes["R4_4"]}><:R4_5:{self.emotes["R4_5"]}>\n
+                # <:R5_1:{self.emotes["R5_1"]}><:R5_2:{self.emotes["R5_2"]}><:R5_3:{self.emotes["R5_3"]}><:R5_4:{self.emotes["R5_4"]}><:R5_5:{self.emotes["R5_5"]}>\n
+            """
 
         embed = embedBuilder(bot).embed(
             color=0xffd330,
@@ -164,18 +172,17 @@ class Gambling(commands.Cog):
             description=description,
             footer=f"Jackpot stash: {jackpot}"
             )
-
         eph = True
         spins_won = 0
         winnings = 0
 
         for spin in range(len(slots_split)):
-            if self.emotes["slot1"].index(slots_split[spin][0]) == self.emotes["slot2"].index(slots_split[spin][1]) == self.emotes["slot3"].index(slots_split[spin][2]):
+            if self.gambling_data["slots"]["slot1"].index(slots_split[spin][0]) == self.gambling_data["slots"]["slot2"].index(slots_split[spin][1]) == self.gambling_data["slots"]["slot3"].index(slots_split[spin][2]):
                 spins_won += 1
                 if eph:
                     eph = False
                 winnings += win_con[f'{slots_split[spin][0]}']
-                if slots_split[spin][0] == self.emotes["slot1"][4]:
+                if slots_split[spin][0] == self.gambling_data["slots"]["slot1"][4]:
                     winnings += await self.get_jackpot(ctx.guild.id, "subtract", 0)
                 await self.economy.add_money(winnings, ctx.guild.id, ctx.author.id)
                 followup = f"Winning spins: **{spins_won}**\nYou won: **{winnings}** {self.economy.server_data[ctx.guild.id]['currency']}!"
@@ -681,6 +688,7 @@ class Gambling(commands.Cog):
             await self.draw_card(self.deck, self.dealer)
             await self.draw_card(self.deck, self.player)
             await self.draw_card(self.deck, self.player)
+            await self.display_cards(self.dealer)
 
             title = "Choose your next move"
             color = 0xffd330
