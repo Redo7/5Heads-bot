@@ -53,7 +53,7 @@ class Misc(commands.Cog):
             link = existing_listing[3]
         else:
             if not largest_id:
-                largest_id = 1
+                listing_id = 1
             else:
                 listing_id = max(max(tup) for tup in largest_id) + 1
 
