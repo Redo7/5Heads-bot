@@ -108,7 +108,7 @@ class Misc(commands.Cog):
             )
         else:
             entries = cursor.execute("SELECT * from blacklist WHERE listing_id = ?", (listing_id,)).fetchall()
-            if len(entries) is 0: raise ValueError("No entry with a given ID exists.")
+            if len(entries) == 0: raise ValueError("No entry with a given ID exists.")
             for entry in entries:
                 reason = entry[4]
                 author = await self.bot.fetch_user(entry[5])
