@@ -99,6 +99,8 @@ class Misc(commands.Cog):
             unique_data = list(unique_dict.values())
             for entry in unique_data:
                 description += f"**[{entry[1]}]** [{entry[2]}]({entry[3]})\n"
+            if len(unique_data) == 0:
+                description = "There are no entries yet"
             embed = embedBuilder(bot).embed(
                 color=0xffd330,
                 author=f"{server.name} blacklist",
