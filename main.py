@@ -7,6 +7,7 @@ import datetime
 from discord import app_commands
 from discord.ext import commands
 from cogs.embedBuilder import embedBuilder
+from cogs.discordIntegration import *
 
 from dotenv import find_dotenv, load_dotenv
 dotenv_path = find_dotenv()
@@ -21,6 +22,16 @@ bot = commands.Bot(command_prefix='!', owner_id=OWNER_ID, intents=intents)
 @bot.event
 async def on_ready():
     print(f'Logged in as {bot.user}')
+    try:
+        embed = embedBuilder(bot).embed(
+                color=0x75FF81,
+                author=bot.user,
+                author_avatar=bot.user.avatar,
+                description=f"**Bot is online**",
+                timestamp=f"{datetime.datetime.now().isoformat()}"
+            )
+        await discordIntegration(bot).send_embed(OWNER_ID, embed)
+    except Exception as e: print(e)
 
 async def load():
     for filename in os.listdir("./cogs"):

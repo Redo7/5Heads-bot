@@ -29,12 +29,9 @@ class discordIntegration(commands.Cog):
             print(f"Failed to send DM to: {e}")
 
     async def send_embed(self, user_id, embed):
-        try:
-            user = await self.bot.fetch_user(user_id)
-            dm_channel = await user.create_dm() 
-            await dm_channel.send(embed=embed.build())
-        except discord.HTTPException as e:
-            print(f"Failed to send DM to: {e}")
+        user = await self.bot.fetch_user(user_id)
+        dm_channel = await user.create_dm() 
+        await dm_channel.send(embed=embed)
 
     @bot.hybrid_command(name="testembed", description="Test an embed")
     @app_commands.choices(ephemeral=[
