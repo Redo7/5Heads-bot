@@ -22,16 +22,15 @@ bot = commands.Bot(command_prefix='!', owner_id=OWNER_ID, intents=intents)
 @bot.event
 async def on_ready():
     print(f'Logged in as {bot.user}')
-    try:
-        embed = embedBuilder(bot).embed(
-                color=0x75FF81,
-                author=bot.user,
-                author_avatar=bot.user.avatar,
-                description=f"**Bot is online**",
-                timestamp=f"{datetime.datetime.now().isoformat()}"
-            )
-        await discordIntegration(bot).send_embed(OWNER_ID, embed)
-    except Exception as e: print(e)
+    if os.getenv('TOKEN') == os.getenv('DEV'): return
+    embed = embedBuilder(bot).embed(
+            color=0x75FF81,
+            author=bot.user,
+            author_avatar=bot.user.avatar,
+            description=f"**Bot is online**",
+            timestamp=f"{datetime.datetime.now().isoformat()}"
+        )
+    await discordIntegration(bot).send_embed(OWNER_ID, embed)
 
 async def load():
     for filename in os.listdir("./cogs"):
