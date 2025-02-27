@@ -129,15 +129,7 @@ class Misc(commands.Cog):
     async def blacklist_delete(self, ctx, listing_id: int):
         entry = cursor.execute("SELECT * FROM blacklist WHERE listing_id = ?", (listing_id,)).fetchone()
         if entry is None: raise ValueError("No entry with a given ID exists.")
-        timestamp = math.floor(datetime.datetime.now().timestamp()) + 60
-        server = await self.bot.fetch_guild(ctx.guild.id)
-        embed = embedBuilder(bot).embed(
-                color=0xffd330,
-                author=f"{server.name} blacklist",
-                author_avatar=server.icon,
-                description=f"### This will delete the entry for: [{entry[2]}]({entry[3]})\nAre you sure?\nThis window will timeout <t:{timestamp}:R>"
-            )
-        await ctx.send(embed=embed, view=self.Blacklist(bot, ctx, entry))
+        await self.Blacklist(self.bot, ctx, entry).initial_response()
 
     class Blacklist(View):
         def __init__(self,bot, ctx, entry, timeout=60):
@@ -145,14 +137,26 @@ class Misc(commands.Cog):
             self.bot = bot
             self.ctx = ctx
             self.entry = entry
+
+        async def initial_response(self):
+            timestamp = math.floor(datetime.datetime.now().timestamp()) + 60
+            server = await self.bot.fetch_guild(self.ctx.guild.id)
+            embed = embedBuilder(bot).embed(
+                    color=0xffd330,
+                    author=f"{server.name} blacklist",
+                    author_avatar=server.icon,
+                    description=f"### This will delete the entry for: [{self.entry[2]}]({self.entry[3]})\nAre you sure?\nThis window will timeout <t:{timestamp}:R>"
+                )
+            self.message = await self.ctx.send(embed=embed, view=self)
         
         @discord.ui.button(label="Confirm", style=discord.ButtonStyle.green)
         async def confirm(self, interaction: discord.Interaction, button: discord.ui.Button):
             if interaction.user.id != self.ctx.author.id: return
+            await self.message.delete()
             cursor.execute("DELETE FROM blacklist WHERE listing_id = ?", (self.entry[1],))
             database.commit()
             server = await self.bot.fetch_guild(self.ctx.guild.id)
-            embed = embedBuilder(bot).embed(
+            embed = embedBuilder(self.bot).embed(
                 color=0x75FF81,
                 author=f"{server.name} Blacklist",
                 author_avatar=server.icon,
