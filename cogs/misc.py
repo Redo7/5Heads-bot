@@ -1,14 +1,19 @@
-import time
+import re
+import math
+import json
+import uuid
 import random
-import asyncio
+import sqlite3
 import datetime
 import requests
 from cogs import config
+from typing import Optional
 from cogs.embedBuilder import embedBuilder
 
 import discord
 from discord import app_commands
 from discord.ext import commands
+from discord.ui import View, Button
 from discord.app_commands import Choice
 
 import os
@@ -17,6 +22,10 @@ intents = discord.Intents.default()
 intents.message_content = True
 bot = commands.Bot(command_prefix='!', owner_id=OWNER_ID, intents=intents)
 
+database = sqlite3.connect('db/main.db')
+cursor = database.cursor()
+database.execute('CREATE TABLE IF NOT EXISTS blacklist(server_id INT, listing_id INT DEFAULT 0, name TEXT, link TEXT, reason TEXT, added_by INT, timestamp INT)')
+
 class Misc(commands.Cog):
     def __init__(self, bot):
         self.bot = bot
@@ -24,6 +33,131 @@ class Misc(commands.Cog):
     @commands.Cog.listener()
     async def on_ready(self):
         print(f"Misc cog loaded")
+
+    @bot.hybrid_command(name="blacklistadd", description="Add a new entry to the wall of shame")
+    async def blacklist_add(self, ctx, name: str, link: str, reason: str):
+        if ctx.interaction is None: 
+            raise ValueError('This command can only be used as /blacklistadd')
+        if re.compile(r".+([A-Za-z]+(\.[A-Za-z]+)+).+", re.IGNORECASE).match(link) is None:
+            raise ValueError('The value in the link field does not resemble a link.\nExpected: https://site.com/username OR site.com/username')
+        if "http://" not in link or "https://" not in link:
+            link = f"https://{link}"
+        # Search for existing listing
+        existing_listing = await self.check_listing_exist(name, link)
+        largest_id = await self.get_largest_id()
+        # Replace content to match the previous listing
+        listing_id = 0
+        if existing_listing:
+            listing_id = existing_listing[1]
+            name = existing_listing[2]
+            link = existing_listing[3]
+        else:
+            if not largest_id:
+                largest_id = 1
+            else:
+                listing_id = max(max(tup) for tup in largest_id) + 1
+
+        timestamp = math.floor(datetime.datetime.now().timestamp())
+        author = await self.bot.fetch_user(ctx.author.id)
+
+        query = "INSERT INTO blacklist (server_id, listing_id, name, link, reason, added_by, timestamp) VALUES (?, ?, ?, ?, ?, ?, ?)"
+        cursor.execute(query, (ctx.guild.id, listing_id, name, link, reason, ctx.author.id, timestamp))
+        database.commit()
+
+        server = await self.bot.fetch_guild(ctx.guild.id)
+        embed = embedBuilder(bot).embed(
+                color=0xffd330,
+                author=f"{server.name} blacklist",
+                author_avatar=server.icon,
+                title="New entry",
+                description=f"**[{name}]({link})**\n{reason}\n-# Added <t:{timestamp}:R> by {author.display_name}",
+                footer=f"ID: {listing_id}"
+            )
+        await ctx.send(embed=embed)
+    
+    async def check_listing_exist(self, name, link):
+        data = cursor.execute("SELECT * from blacklist WHERE name = ? OR link = ?", (name, link)).fetchone()
+        database.commit()
+        return data
+
+    async def get_largest_id(self):
+        data = cursor.execute("SELECT listing_id from blacklist").fetchall()
+        database.commit()
+        return data
+
+    @bot.hybrid_command(name="blacklist", description="Show the wall of shame or a specific entry")
+    async def blacklist(self, ctx, listing_id: Optional[int]):
+        description = ""
+        server = await self.bot.fetch_guild(ctx.guild.id)
+        if listing_id is None:
+            entries = cursor.execute("SELECT * from blacklist WHERE server_id = ?", (ctx.guild.id,)).fetchall()
+            unique_dict = {}
+            for entry in entries:
+                key = entry[1]
+                if key not in unique_dict:
+                    unique_dict[key] = entry
+            unique_data = list(unique_dict.values())
+            for entry in unique_data:
+                description += f"**[{entry[1]}]** [{entry[2]}]({entry[3]})\n"
+            embed = embedBuilder(bot).embed(
+                color=0xffd330,
+                author=f"{server.name} blacklist",
+                author_avatar=server.icon,
+                description=description,
+                footer="Use /blacklist {id} for more information about the entry."
+            )
+        else:
+            entries = cursor.execute("SELECT * from blacklist WHERE listing_id = ?", (listing_id,)).fetchall()
+            if len(entries) is 0: raise ValueError("No entry with a given ID exists.")
+            for entry in entries:
+                reason = entry[4]
+                author = await self.bot.fetch_user(entry[5])
+                timestamp = entry[6]
+                description += f"-# Added <t:{timestamp}:R> by {author.display_name}:\n{reason}\n\n"
+            embed = embedBuilder(bot).embed(
+                color=0xffd330,
+                author=f"{server.name} blacklist",
+                author_avatar=server.icon,
+                description=f"### [{entries[0][2]}]({entries[0][3]})\n{description}"
+            )
+        await ctx.send(embed=embed)
+
+    @bot.hybrid_command(name="blacklistdelete", description="Delete an entry from the wall of shame")
+    @app_commands.checks.has_permissions(administrator=True)
+    async def blacklist_delete(self, ctx, listing_id: int):
+        entry = cursor.execute("SELECT * FROM blacklist WHERE listing_id = ?", (listing_id,)).fetchone()
+        if entry is None: raise ValueError("No entry with a given ID exists.")
+        timestamp = math.floor(datetime.datetime.now().timestamp()) + 60
+        server = await self.bot.fetch_guild(ctx.guild.id)
+        embed = embedBuilder(bot).embed(
+                color=0xffd330,
+                author=f"{server.name} blacklist",
+                author_avatar=server.icon,
+                description=f"### This will delete the entry for: [{entry[2]}]({entry[3]})\nAre you sure?\nThis window will timeout <t:{timestamp}:R>"
+            )
+        await ctx.send(embed=embed, view=self.Blacklist(bot, ctx, entry))
+
+    class Blacklist(View):
+        def __init__(self,bot, ctx, entry, timeout=60):
+            super().__init__(timeout=timeout)
+            self.bot = bot
+            self.ctx = ctx
+            self.entry = entry
+        
+        @discord.ui.button(label="Confirm", style=discord.ButtonStyle.green)
+        async def confirm(self, interaction: discord.Interaction, button: discord.ui.Button):
+            if interaction.user.id != self.ctx.author.id: return
+            cursor.execute("DELETE FROM blacklist WHERE listing_id = ?", (self.entry[1],))
+            database.commit()
+            server = await self.bot.fetch_guild(self.ctx.guild.id)
+            embed = embedBuilder(bot).embed(
+                color=0x75FF81,
+                author=f"{server.name} Blacklist",
+                author_avatar=server.icon,
+                description=f"### Entry for [{self.entry[2]}]({self.entry[3]}) was deleted."
+            )
+            await interaction.response.send_message(embed=embed, view=None)
+
 
     @bot.hybrid_command(name="cooltext", description="Generate a text image from cooltext.com")
     @app_commands.choices(text_type=[
