@@ -651,6 +651,7 @@ class Gambling(commands.Cog):
             }
             self.dealer = {}
             self.player = {}
+            self.hole_card = {"emote": f"<:hole_card:{self.emotes['hole_card']}>", "card": {}}
             self.win_con_sent = False
 
         @discord.ui.button( label="Hit", style=discord.ButtonStyle.green, custom_id="hit")
@@ -660,6 +661,7 @@ class Gambling(commands.Cog):
         @discord.ui.button(label="Stand", style=discord.ButtonStyle.blurple, custom_id="stand")
         async def stand(self, interaction: discord.Interaction, button: ui.Button):
             await self.disable_button("hit")
+            self.hole_card["emote"] = ""
             await self.advance_round(interaction, self.dealer)
 
         @discord.ui.button(label="Double Down", style=discord.ButtonStyle.red, custom_id="double_down")
@@ -675,6 +677,7 @@ class Gambling(commands.Cog):
         async def initial_response(self):
             await self.draw_card(self.deck, self.dealer)
             await self.draw_card(self.deck, self.player)
+            await self.draw_card(self.deck, self.hole_card["card"])
             await self.draw_card(self.deck, self.player)
 
             title = "Choose your next move"
@@ -701,7 +704,7 @@ class Gambling(commands.Cog):
                     title=title,
                     description=f"""
                     # `Dealer: {await self.calculate_score(self.dealer)}`\n
-                    # {await self.display_cards(self.dealer)}\n
+                    # {await self.display_cards(self.dealer)}{self.hole_card["emote"]}\n
                     # `Player: {await self.calculate_score(self.player)}`\n
                     # {await self.display_cards(self.player)}
                     """,
@@ -721,7 +724,7 @@ class Gambling(commands.Cog):
                     title="Choose your next move",
                     description=f"""
                     # `Dealer: {await self.calculate_score(self.dealer)}`\n
-                    # {await self.display_cards(self.dealer)}\n
+                    # {await self.display_cards(self.dealer)}{self.hole_card["emote"]}\n
                     # `Player: {await self.calculate_score(self.player)}`\n
                     # {await self.display_cards(self.player)}
                     """,
@@ -796,7 +799,7 @@ class Gambling(commands.Cog):
                         title=win_con,
                         description=f"""
                         # `Dealer: {dealer_score}`\n
-                        # {await self.display_cards(self.dealer)}\n
+                        # {await self.display_cards(self.dealer)}{self.hole_card["emote"]}\n
                         # `Player: {player_score}`\n
                         # {await self.display_cards(self.player)}
                         """,
@@ -807,13 +810,19 @@ class Gambling(commands.Cog):
                 return
 
         async def draw_card(self, deck, hand):
-            suit = random.choice(list(deck))
-            card = random.choice(list(deck[suit]))
-            deck[suit].remove(card)
-            try:
-                hand[suit].append(card)
-            except KeyError:
-                hand[suit] = [card]
+                suit = random.choice(list(deck))
+                card = random.choice(list(deck[suit]))
+                if self.hole_card["emote"] == "" and self.hole_card["card"] != "":
+                    keys = list(self.hole_card["card"])
+                    suit = keys[0]
+                    card = self.hole_card["card"][f"{keys[0]}"][0]
+                    self.hole_card["card"] = ""
+                else:
+                    deck[suit].remove(card)
+                try:
+                    hand[suit].append(card)
+                except KeyError:
+                    hand[suit] = [card]
         
         async def calculate_score(self, hand):
             score = 0
