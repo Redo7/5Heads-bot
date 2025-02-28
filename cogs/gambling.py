@@ -220,11 +220,10 @@ class Gambling(commands.Cog):
         # Outside Bets
 
         async def initial_response(self):
-            bot_user = await self.bot.fetch_user(self.bot._application.id)
             embed = embedBuilder(bot).embed(
                 color=0xffd330,
                 author="Roulette",
-                author_avatar=bot_user.avatar,
+                author_avatar=self.bot.user.avatar,
                 description="Choose your bet",
                 thumbnail="https://cdn-icons-png.flaticon.com/512/3425/3425938.png"
             )
@@ -364,11 +363,10 @@ class Gambling(commands.Cog):
                 color = 0xed1b53
                 await self.economy.subtract_money(self.bet, interaction.guild_id, interaction.user.id)
 
-            bot_user = await self.bot.fetch_user(self.bot._application.id)
             embed = embedBuilder(self.bot).embed(
                 color=color,
                 author="Roulette",
-                author_avatar=bot_user.avatar,
+                author_avatar=self.bot.user.avatar,
                 title=res,
                 description=f"The number was: {await Gambling.RouletteView.get_color(num, self.gambling_data)} **{num}**\n{desc}",
                 footer=f"{bet_type} • {self.bet} • {multiplier}x"
@@ -697,11 +695,10 @@ class Gambling(commands.Cog):
                 curr_view = None
                 await self.economy.add_money(self.bet * 1.5, self.ctx.guild.id, self.ctx.author.id)
 
-            bot_user = await self.bot.fetch_user(self.bot._application.id)
             embed = embedBuilder(self.bot).embed(
                     color=color,
                     author="Blackjack",
-                    author_avatar=bot_user.avatar,
+                    author_avatar=self.bot.user.avatar,
                     title=title,
                     description=f"""
                     # `Dealer: {await self.calculate_score(self.dealer)}`\n
@@ -717,11 +714,10 @@ class Gambling(commands.Cog):
         async def advance_round(self, interaction, hand):
             await interaction.response.defer()
             await self.draw_card(self.deck, hand)
-            bot_user = await self.bot.fetch_user(self.bot._application.id)
             embed = embedBuilder(self.bot).embed(
                     color=0xffd330,
                     author="Blackjack",
-                    author_avatar=bot_user.avatar,
+                    author_avatar=self.bot.user.avatar,
                     title="Choose your next move",
                     description=f"""
                     # `Dealer: {await self.calculate_score(self.dealer)}`\n
@@ -792,11 +788,10 @@ class Gambling(commands.Cog):
                     await self.economy.subtract_money(self.bet, interaction.guild_id, interaction.user.id)
                 
             if win_con is not False:
-                bot_user = await self.bot.fetch_user(self.bot._application.id)
                 embed = embedBuilder(self.bot).embed(
                         color=color,
                         author="Blackjack",
-                        author_avatar=bot_user.avatar,
+                        author_avatar=self.bot.user.avatar,
                         title=win_con,
                         description=f"""
                         # `Dealer: {dealer_score}`\n

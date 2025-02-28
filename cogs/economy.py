@@ -118,10 +118,9 @@ class Economy(commands.Cog):
         self.server_data[ctx.guild.id]["epm"] = amount
         cursor.execute(f"UPDATE economy SET epm = (?) WHERE server_id = (?)", (amount, ctx.guild.id,))
         database.commit()
-        bot_user = await self.bot.fetch_user(self.bot._application.id)
         embed = embedBuilder(bot).embed(
             color=0xffd330,
-            author_avatar=bot_user.avatar,
+            author_avatar=self.bot.user.avatar,
             author="5Head",
             description=f"EPM for **`{ctx.guild.name}`** was adjusted to **`{amount}`**",
             footer=f"Previous amount: {prev_amount}"
@@ -135,10 +134,9 @@ class Economy(commands.Cog):
         self.server_data[ctx.guild.id]["currency"] = name
         cursor.execute(f"UPDATE economy SET currency = (?) WHERE server_id = (?)", (name, ctx.guild.id,))
         database.commit()
-        bot_user = await self.bot.fetch_user(self.bot._application.id)
         embed = embedBuilder(bot).embed(
             color=0xffd330,
-            author_avatar=bot_user.avatar,
+            author_avatar=self.bot.user.avatar,
             author="5Head",
             description=f"**`{name}`** is now the currency in **`{ctx.guild.name}`**",
             footer=f"Previous name: {prev_name}"

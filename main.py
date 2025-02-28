@@ -54,11 +54,10 @@ async def on_command_error(ctx: commands.Context, error):
     else:
         title = "An unexpected error occurred."
         print(traceback_str)
-    bot_user = await bot.fetch_user(bot._application.id)
     embed = embedBuilder(bot).embed(
                 color=0xed1b53,
                 author=title,
-                author_avatar=bot_user.avatar,
+                author_avatar=bot.user.avatar,
                 description=f"```py\n{error}\n```",
                 timestamp=f"{datetime.datetime.now().isoformat()}"
             )

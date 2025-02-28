@@ -195,11 +195,10 @@ class Misc(commands.Cog):
         for var, val in vars(ctx).items():
             context += f"{var}: {val}\n"
 
-        bot_user = await self.bot.fetch_user(self.bot._application.id)
         embed = embedBuilder(bot).embed(
                 color=0xffd330,
                 author="Context",
-                author_avatar=bot_user.avatar,
+                author_avatar=self.bot.user.avatar,
                 description=f"```py\n{context}\n```",
                 timestamp=f"{datetime.datetime.now().isoformat()}"
             )
