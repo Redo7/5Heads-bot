@@ -35,6 +35,7 @@ class Cogs(commands.Cog):
         ]
 
     @bot.hybrid_command(name="reload", description="Reloads a cog", hidden=True)
+    @app_commands.describe(name="The cog to reload")
     @app_commands.choices(name=choices)
     async def reload(self, ctx, name: Choice[str],):
         try:
@@ -47,6 +48,7 @@ class Cogs(commands.Cog):
             print(e)
 
     @bot.hybrid_command(name="load", description="Reloads a cog", hidden=True)
+    @app_commands.describe(name="The cog to load")
     @app_commands.choices(name=choices)
     async def load(self, ctx, name: Choice[str],):
         if ctx.author.id != OWNER_ID:
@@ -62,6 +64,7 @@ class Cogs(commands.Cog):
             print(e)
 
     @bot.hybrid_command(name="unload", description="Unloads a cog", hidden=True)
+    @app_commands.describe(name="The cog to unload")
     @app_commands.choices(name=choices)
     async def unload(self, ctx, name: Choice[str],):
         if ctx.author.id != OWNER_ID:

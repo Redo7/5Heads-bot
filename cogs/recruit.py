@@ -40,13 +40,13 @@ class Recruit(commands.Cog):
             print(f"Error: Could not find channel with ID: {RECRUIT_CHANNEL}")
 
     # Initial Command
-    @bot.hybrid_command(name='recruit', brief='Indocrinate a new member into the server')
-    async def recruit(self, ctx, 
-    name: str = commands.parameter(description="The name of the invitee"), 
-    avatar_link: str = commands.parameter(description="The direct link to their avatar (Right click avatar > Open image in new tab > Copy link)"),
-    profile_link: str = commands.parameter(description="Twitter/Social media profile link"),
-    additional_link: Optional[str] = commands.parameter(description="Any additional link"),
-    description: str = commands.parameter(description="Bio / Short description of the invitee")) -> None:
+    @bot.hybrid_command(name='recruit', description='Indocrinate a new member into the server')
+    @app_commands.describe(name="The name of the invitee")
+    @app_commands.describe(avatar_link="The direct link to their avatar (Right click avatar > Open image in new tab > Copy link)")
+    @app_commands.describe(profile_link="Twitter/Social media profile link")
+    @app_commands.describe(additional_link="Any additional link")
+    @app_commands.describe(description="Bio / Short description of the invitee")
+    async def recruit(self, ctx, name: str, avatar_link: str, profile_link: str, additional_link: str, description: str) -> None:
         # Prep DB
         uid = str(uuid.uuid4())
         print(f'Creating new database entry for voting {uid}')
@@ -77,7 +77,8 @@ class Recruit(commands.Cog):
             print(f"Error occurred during dispatch: {e}")
 
     # End Voting Command
-    @bot.hybrid_command(name='endvoting', brief='Finalize voting by ID')
+    @bot.hybrid_command(name='endvoting', description='Finalize voting by ID')
+    @app_commands.describe(uid="Unique ID assigned to the voting. Visible in the embed's footer")
     @app_commands.checks.has_permissions(manage_messages=True)
     async def end_voting(self, ctx, uid: str):
         try:

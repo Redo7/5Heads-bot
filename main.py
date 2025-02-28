@@ -17,7 +17,42 @@ OWNER_ID = os.getenv('OWNER_ID')
 RECRUIT_CHANNEL = int(os.getenv('RECRUIT_CHANNEL'))
 intents = discord.Intents.default()
 intents.message_content = True
+
+class Custom_help(commands.MinimalHelpCommand):
+    async def send_pages(self):
+        destination = self.get_destination()
+        e = discord.Embed(color=0xffd330, description='')
+        for page in self.paginator.pages:
+            e.description += page
+        await destination.send(embed=e)
+
+    def add_command_formatting(self, command):
+        if command.description:
+            self.paginator.add_line(f"**{command.name}** - {command.description}")
+        else:
+            self.paginator.add_line(f"**{command.name}** - No description available")
+
+        usage_line = f"Usage: `{self.context.clean_prefix}{command.name}"
+        if hasattr(command, "app_command") and command.app_command is not None:
+            for param in command.app_command.parameters:
+                if param.required:
+                    usage_line += f" <{param.name}>"
+                else:
+                    usage_line += f" [{param.name}]"
+        usage_line += "`"
+        self.paginator.add_line(usage_line)
+
+        if hasattr(command, "app_command") and command.app_command is not None:
+            self.paginator.add_line("\n**Arguments:**")
+            for param in command.app_command.parameters:
+                description = param.description or "No description available"
+                if hasattr(param, "choices") and param.choices:
+                    choices = ", ".join([f"`{choice.name}`" for choice in param.choices])
+                    description += f"\nChoices: {choices}"
+                self.paginator.add_line(f"- `{param.name}`: {description}")
+
 bot = commands.Bot(command_prefix='!', owner_id=OWNER_ID, intents=intents)
+bot.help_command = Custom_help()
 
 @bot.event
 async def on_ready():
@@ -64,7 +99,6 @@ async def on_command_error(ctx: commands.Context, error):
     await ctx.send(embed=embed, ephemeral=True)
 
 async def main():
-    bot.remove_command("help")
     await load()  # Load the cogs
     await bot.start(TOKEN)
 

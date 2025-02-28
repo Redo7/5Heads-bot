@@ -29,6 +29,9 @@ class Tenor(commands.Cog):
         print(f"Tenor cog loaded")
 
     @bot.hybrid_command(name="gifs", description="Send a gif targeted at someone")
+    @app_commands.describe(name="The name of the action")
+    @app_commands.describe(anime="Should the result be from an anime?")
+    @app_commands.describe(target="The person to @ when the bot sends the gif")
     @app_commands.choices(name=[
         Choice(name="Bonk", value="bonk"),
         Choice(name="Chase", value="chase"),

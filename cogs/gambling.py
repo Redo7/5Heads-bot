@@ -112,6 +112,7 @@ class Gambling(commands.Cog):
     # Slots
 
     @commands.hybrid_command(name='slots', description='Spin to win!')
+    @app_commands.describe(spins="The amount of slot spins to play at once")
     async def slots(self, ctx, spins: Optional[int]):
         if ctx.interaction is None: 
             raise ValueError('This command can only be used as /slots')
@@ -201,6 +202,7 @@ class Gambling(commands.Cog):
     # Roulette
 
     @commands.hybrid_command(name='roulette', description='Bet your life savings away!')
+    @app_commands.describe(bet="The amount to bet")
     async def roulette(self, ctx, bet: int):
         if ctx.interaction is None: 
             raise ValueError('This command can only be used as /roulette')
@@ -628,6 +630,7 @@ class Gambling(commands.Cog):
     # Blackjack
 
     @bot.hybrid_command(name='blackjack', description="What's 9 + 10?")
+    @app_commands.describe(bet="The amount to bet")
     async def blackjack(self, ctx, bet: int):
         if ctx.interaction is None: 
             raise ValueError('This command can only be used as /blackjack')

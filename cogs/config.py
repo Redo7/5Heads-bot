@@ -36,6 +36,7 @@ class Config(commands.Cog):
             database.commit()
 
     @bot.hybrid_command(name="togglefeature", description="Toggles the bots features on/off")
+    @app_commands.describe(feature="The feature to toggle")
     @app_commands.choices(feature=[
             Choice(name=":3c Animation", value="animation_3c"),
             Choice(name="FXTwitter", value="twitter_links")

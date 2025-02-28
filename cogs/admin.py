@@ -32,7 +32,8 @@ class Admin(commands.Cog):
         print(msg)
 
     @commands.has_permissions(manage_messages=True)
-    @bot.hybrid_command(name='purge', brief='Deletes a specified number of messages from the current channel')
+    @bot.hybrid_command(name='purge', description='Deletes a specified number of messages from the current channel')
+    @app_commands.describe(amount="The amount of messages to delete")
     async def purge(self, ctx, amount: int):
         await ctx.send(f'Purging messages...')
         deleted = await ctx.channel.purge(limit=amount+1)
@@ -46,7 +47,7 @@ class Admin(commands.Cog):
             await ctx.send(embed=embed)
 
     @commands.has_permissions(manage_messages=True)
-    @commands.hybrid_command(name="safepurge", brief="Reply to a message to delete everything after it")
+    @commands.hybrid_command(name="safepurge", description="Reply to a message to delete everything after it")
     async def safe_purge(self, ctx):
         if ctx.interaction is not None:
             await ctx.send("This command must be invoked with `!safepurge`")
@@ -64,15 +65,6 @@ class Admin(commands.Cog):
             await self.purge(ctx, count + 1)
         else:
             await ctx.send("This command must be used as a reply to a message.")
-    
-    # @commands.hybrid_command(name='help', brief='Displays the help documentation') # Todo
-    # async def help(self, ctx, command_name):
-    #         command = self.bot.get_command(command_name)
-    #         print(command, command.help)
-    #         if command:
-    #             await ctx.send(command.help)
-    #         else:
-    #             await ctx.send(f"Command '{command_name}' not found.")
 
 async def setup(bot):
     await bot.add_cog(Admin(bot))

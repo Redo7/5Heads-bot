@@ -35,6 +35,9 @@ class Misc(commands.Cog):
         print(f"Misc cog loaded")
 
     @bot.hybrid_command(name="blacklistadd", description="Add a new entry to the wall of shame")
+    @app_commands.describe(name="The username of the person")
+    @app_commands.describe(link="Link to the person's profile (best to use twitter)")
+    @app_commands.describe(reason="The reason why the person has been added")
     async def blacklist_add(self, ctx, name: str, link: str, reason: str):
         if ctx.interaction is None: 
             raise ValueError('This command can only be used as /blacklistadd')
@@ -86,6 +89,7 @@ class Misc(commands.Cog):
         return data
 
     @bot.hybrid_command(name="blacklist", description="Show the wall of shame or a specific entry")
+    @app_commands.describe(listing_id="The ID of the listing to show. Visible as a number in [] when invoking `/blacklist` without any argument")
     async def blacklist(self, ctx, listing_id: Optional[int]):
         description = ""
         server = await self.bot.fetch_guild(ctx.guild.id)
@@ -125,6 +129,7 @@ class Misc(commands.Cog):
         await ctx.send(embed=embed)
 
     @bot.hybrid_command(name="blacklistdelete", description="Delete an entry from the wall of shame")
+    @app_commands.describe(listing_id="The ID of the listing to delete. Visible as a number in [] when invoking `/blacklist` without any argument")
     @app_commands.checks.has_permissions(administrator=True)
     async def blacklist_delete(self, ctx, listing_id: int):
         entry = cursor.execute("SELECT * FROM blacklist WHERE listing_id = ?", (listing_id,)).fetchone()
@@ -166,6 +171,8 @@ class Misc(commands.Cog):
 
 
     @bot.hybrid_command(name="cooltext", description="Generate a text image from cooltext.com")
+    @app_commands.describe(text_type="The style of the generated image")
+    @app_commands.describe(text="The text to generate")
     @app_commands.choices(text_type=[
         Choice(name="Animated Glow", value="1"),
         Choice(name="Blinkie", value="2"),
@@ -209,6 +216,7 @@ class Misc(commands.Cog):
         await ctx.send('<:WidePeepoHappy1:768481090079686677><:WidePeepoHappy2:768481089936818216><:WidePeepoHappy3:768481090029355038><:WidePeepoHappy4:768481090041413653>')
 
     @bot.hybrid_command(name="8ball", description="Ask the Magic 8 Ball a question")
+    @app_commands.describe(question="The question you want to ask. Should be a Yes/No question, otherwise it makes no sense")
     async def magic8ball(self, ctx: commands.Context, question: str) -> None:
         resp = [
             'It is certain',

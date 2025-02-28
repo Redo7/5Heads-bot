@@ -6,7 +6,7 @@ import sqlite3
 import datetime
 from typing import Optional
 from discord.ext import commands, tasks
-from discord import ui
+from discord import ui, app_commands
 from cogs.embedBuilder import embedBuilder
 
 import os
@@ -97,7 +97,8 @@ class Economy(commands.Cog):
     
     # Commands
 
-    @commands.hybrid_command(name='balance', brief='Check your balance')
+    @commands.hybrid_command(name='balance', description='Check your balance')
+    @app_commands.describe(show_off="Should the message be sent publicly?")
     async def balance(self, ctx, show_off: Optional[bool]):
         await self.save_economy()
         if show_off == None: show_off = False
@@ -112,7 +113,8 @@ class Economy(commands.Cog):
         await ctx.send(embed=embed, ephemeral=not show_off)
 
     @commands.has_permissions(administrator=True)
-    @bot.hybrid_command(name='epm', brief='Changes the "Earnings Per Message" value for the current server')
+    @bot.hybrid_command(name='epm', description='Changes the "Earnings Per Message" value for the current server')
+    @app_commands.describe(amount="The amount users earn per message sent")
     async def epm(self, ctx, amount: float):
         prev_amount = self.server_data[ctx.guild.id]["epm"]
         self.server_data[ctx.guild.id]["epm"] = amount
@@ -128,7 +130,8 @@ class Economy(commands.Cog):
         await ctx.send(embed=embed, ephemeral=True)
 
     @commands.has_permissions(administrator=True)
-    @bot.hybrid_command(name='currency', brief='Changes the currency name for the current server')
+    @bot.hybrid_command(name='currency', description='Changes the currency name for the current server')
+    @app_commands.describe(name="The new currency name")
     async def currency(self, ctx, name: str):
         prev_name = self.server_data[ctx.guild.id]["currency"]
         self.server_data[ctx.guild.id]["currency"] = name
@@ -143,7 +146,9 @@ class Economy(commands.Cog):
             )
         await ctx.send(embed=embed, ephemeral=True)
 
-    @commands.hybrid_command(name='sendfunds', brief='Transfer funds to a member')
+    @commands.hybrid_command(name='sendfunds', description='Transfer funds to a member')
+    @app_commands.describe(target="The user to send the funds to")
+    @app_commands.describe(amount="The amount of funds to sends")
     async def send_funds(self, ctx, target: discord.User, amount: int):
         sender = await self.bot.fetch_user(ctx.author.id)
         sender_balance = await self.get_user_balance(ctx.guild.id, sender.id)
@@ -168,7 +173,9 @@ class Economy(commands.Cog):
             )
         await ctx.send(f"{target.mention}", embed=embed)
 
-    @commands.hybrid_command(name='requestfunds', brief='Request funds from a member')
+    @commands.hybrid_command(name='requestfunds', description='Request funds from a member')
+    @app_commands.describe(target="The user to request the funds from")
+    @app_commands.describe(amount="The amount of funds to request")
     async def request_funds(self, ctx, target: discord.User, amount: int):
         if amount <= 0:
             await ctx.send("Nah uh")

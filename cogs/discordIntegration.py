@@ -34,6 +34,19 @@ class discordIntegration(commands.Cog):
         await dm_channel.send(embed=embed)
 
     @bot.hybrid_command(name="testembed", description="Test an embed")
+    @app_commands.describe(ephemeral="Should the message only be viisble to the user who invoked the command?")
+    @app_commands.describe(title="Embed title")
+    @app_commands.describe(description="Main text body")
+    @app_commands.describe(url="Link to attach to the title")
+    @app_commands.describe(color="Color visible on the left side of the embed. The command expects INT color (#ED1B53 = 15539027)")
+    @app_commands.describe(timestamp="ISO format timestamp")
+    @app_commands.describe(author="The author of the embed")
+    @app_commands.describe(author_url="Link to attach to the authors name")
+    @app_commands.describe(author_avatar="Author's avatar")
+    @app_commands.describe(thumbnail="Small thumbnail visible in the top right of the embed")
+    @app_commands.describe(image="Large Image visible at the bottom of the embed")
+    @app_commands.describe(footer="Small description visible at the bottom of the embed")
+    @app_commands.describe(fields="Extra fields to append")
     @app_commands.choices(ephemeral=[
             Choice(name="Yes", value=1),
             Choice(name="No", value=0)
