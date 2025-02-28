@@ -175,6 +175,7 @@ class Gambling(commands.Cog):
                 followup = f"Winning spins: **{spins_won}**\nYou won: **{winnings}** {self.economy.server_data[ctx.guild.id]['currency']}!"
             else:
                 await self.economy.subtract_money(required_amount, ctx.guild.id, ctx.author.id)
+                await self.economy.add_money(required_amount * 0.75, ctx.guild.id, self.bot.user.id)
                 await self.get_jackpot(ctx.guild.id, "add", required_amount * 0.25)
                 if spins_won == 0:
                     followup = "You won fuck all!"
