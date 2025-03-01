@@ -4,6 +4,7 @@ import sqlite3
 import datetime
 import requests
 from typing import Optional
+from collections import Counter
 from discord.ext import commands, tasks
 from cogs.embedBuilder import embedBuilder
 from discord import ui, app_commands
@@ -83,9 +84,11 @@ class Gambling(commands.Cog):
         self.gambling_data = {
             "jackpot": {},
             "slots": {
-            "slot1": [f"<a:despairge1:{self.emotes['despairge1']}>", f"<a:kys1:{self.emotes['kys1']}>", f"<a:widepeepohappy1:{self.emotes['widepeepohappy1']}>", f"<a:7271:{self.emotes['7271']}>", f"<a:jackpot1:{self.emotes['jackpot1']}>"],
-            "slot2": [f"<a:despairge2:{self.emotes['despairge2']}>", f"<a:kys2:{self.emotes['kys2']}>", f"<a:widepeepohappy2:{self.emotes['widepeepohappy2']}>", f"<a:7272:{self.emotes['7272']}>", f"<a:jackpot2:{self.emotes['jackpot2']}>"],
-            "slot3": [f"<a:despairge3:{self.emotes['despairge3']}>", f"<a:kys3:{self.emotes['kys3']}>", f"<a:widepeepohappy3:{self.emotes['widepeepohappy3']}>", f"<a:7273:{self.emotes['7273']}>", f"<a:jackpot3:{self.emotes['jackpot3']}>"]
+                0.05: "jackpot",
+                0.15: "727",
+                0.30: "widepeepohappy",
+                0.50: "kys",
+                0.70: "despairge"
             },
             "roulette": {
                 "green": [0],
@@ -116,15 +119,8 @@ class Gambling(commands.Cog):
     async def slots(self, ctx, spins: Optional[int]):
         if ctx.interaction is None: 
             raise ValueError('This command can only be used as /slots')
-        if spins > 4: raise ValueError("You can only do up to 4 spins at a time")
+        # if spins > 4: raise ValueError("You can only do up to 4 spins at a time")
         spins = 1 if spins == None else spins
-        win_con = {
-            f'{self.gambling_data["slots"]["slot1"][0]}': 25,
-            f'{self.gambling_data["slots"]["slot1"][1]}': 75,
-            f'{self.gambling_data["slots"]["slot1"][2]}': 150,
-            f'{self.gambling_data["slots"]["slot1"][3]}': 300,
-            f'{self.gambling_data["slots"]["slot1"][4]}': 500
-        }
         required_amount = 10
         user_balance = await self.economy.get_user_balance(ctx.guild.id, ctx.author.id)
         jackpot = await self.get_jackpot(ctx.guild.id, "get", 0)
@@ -132,52 +128,64 @@ class Gambling(commands.Cog):
             await ctx.send("broke ahh", ephemeral=True)
             return
 
+        win_con = {
+            f'{self.gambling_data["slots"][0.70]}': 0,
+            f'{self.gambling_data["slots"][0.50]}': 75,
+            f'{self.gambling_data["slots"][0.30]}': 150,
+            f'{self.gambling_data["slots"][0.15]}': 300,
+            f'{self.gambling_data["slots"][0.05]}': 500
+        }
         spins_won = 0
         slots_split = []
         embeds = []
         eph = True
         winnings = 0
+        winning_numbers = []
 
         for spin in range(1, spins + 1):
             slots = ""
+            embed_desc = ""
             color = 0xffd330
+            this_spin = []
+
             for emote in range(1, 4):
-                slots += f'{random.choice(self.gambling_data["slots"][f"slot{emote}"])} '
-            
+                num = random.uniform(0.0, 1.0)
+                closest = await self.find_closest_key(self.gambling_data["slots"], num)
+                this_spin.append(closest)
+                emote_name = self.gambling_data["slots"][closest]
+                slots += f'<a:{emote_name}{emote}:{self.emotes[f"{emote_name}{emote}"]}> '
+
+            winning_numbers.append(this_spin)
             slots_split += [slots.split(' ')]
             slots = slots.replace(' ', '')
-            if self.gambling_data["slots"]["slot1"].index(slots_split[spin - 1][0]) == self.gambling_data["slots"]["slot2"].index(slots_split[spin - 1][1]) == self.gambling_data["slots"]["slot3"].index(slots_split[spin - 1][2]):
-                spin = f"{spin} ✅"
+            description = f"""# <:R1_1:{self.emotes["R1_1"]}><:R1_2:{self.emotes["R1_2"]}><:R1_3:{self.emotes["R1_3"]}><:R1_4:{self.emotes["R1_4"]}><:R1_5:{self.emotes["R1_5"]}>\n# <:R2_1:{self.emotes["R2_1"]}>{slots}<:R2_5:{self.emotes["R2_5"]}>\n# <:R3_1:{self.emotes["R3_1"]}><:R3_2:{self.emotes["R3_2"]}><:R3_3:{self.emotes["R3_3"]}><:R3_4:{self.emotes["R3_4"]}><:R3_5:{self.emotes["R3_5"]}>\n# <:R4_1:{self.emotes["R4_1"]}><:R4_2:{self.emotes["R4_2"]}><:R4_3:{self.emotes["R4_3"]}><:R4_4:{self.emotes["R4_4"]}><:R4_5:{self.emotes["R4_5"]}>\n# <:R5_1:{self.emotes["R5_1"]}><:R5_2:{self.emotes["R5_2"]}><:R5_3:{self.emotes["R5_3"]}><:R5_4:{self.emotes["R5_4"]}><:R5_5:{self.emotes["R5_5"]}>"""
+            
+            if await self.check_win_condition(winning_numbers[spin - 1]) and len([x for x in slots_split[spin - 1] if "despairge" in x]) == 0:
+                spin_count = f"{spin} ✅"
                 spins_won += 1
                 color = 0x75FF81
-                description = f"""
-                    `Spin #{spin}`\n# <:R1_1:{self.emotes["R1_1"]}><:R1_2:{self.emotes["R1_2"]}><:R1_3:{self.emotes["R1_3"]}><:R1_4:{self.emotes["R1_4"]}><:R1_5:{self.emotes["R1_5"]}>\n# <:R2_1:{self.emotes["R2_1"]}>{slots}<:R2_5:{self.emotes["R2_5"]}>\n# <:R3_1:{self.emotes["R3_1"]}><:R3_2:{self.emotes["R3_2"]}><:R3_3:{self.emotes["R3_3"]}><:R3_4:{self.emotes["R3_4"]}><:R3_5:{self.emotes["R3_5"]}>\n# <:R4_1:{self.emotes["R4_1"]}><:R4_2:{self.emotes["R4_2"]}><:R4_3:{self.emotes["R4_3"]}><:R4_4:{self.emotes["R4_4"]}><:R4_5:{self.emotes["R4_5"]}>\n# <:R5_1:{self.emotes["R5_1"]}><:R5_2:{self.emotes["R5_2"]}><:R5_3:{self.emotes["R5_3"]}><:R5_4:{self.emotes["R5_4"]}><:R5_5:{self.emotes["R5_5"]}>
-                """
-                embed = embedBuilder(bot).embed(
-                    color=color,
-                    author="Slots",
-                    description=description,
-                    footer=f"Jackpot stash: {jackpot}"
-                    )
-                embeds.append(embed)
+                embed_desc = f"`Spin #{spin_count}`\n{description}"
             elif spin == spins and spins_won == 0:
-                description = f"""# <:R1_1:{self.emotes["R1_1"]}><:R1_2:{self.emotes["R1_2"]}><:R1_3:{self.emotes["R1_3"]}><:R1_4:{self.emotes["R1_4"]}><:R1_5:{self.emotes["R1_5"]}>\n# <:R2_1:{self.emotes["R2_1"]}>{slots}<:R2_5:{self.emotes["R2_5"]}>\n# <:R3_1:{self.emotes["R3_1"]}><:R3_2:{self.emotes["R3_2"]}><:R3_3:{self.emotes["R3_3"]}><:R3_4:{self.emotes["R3_4"]}><:R3_5:{self.emotes["R3_5"]}>\n# <:R4_1:{self.emotes["R4_1"]}><:R4_2:{self.emotes["R4_2"]}><:R4_3:{self.emotes["R4_3"]}><:R4_4:{self.emotes["R4_4"]}><:R4_5:{self.emotes["R4_5"]}>\n# <:R5_1:{self.emotes["R5_1"]}><:R5_2:{self.emotes["R5_2"]}><:R5_3:{self.emotes["R5_3"]}><:R5_4:{self.emotes["R5_4"]}><:R5_5:{self.emotes["R5_5"]}>
-                """
+                embed_desc = f"-# You lost all {spins} spins. Displaying only one to avoid spam.\n{description}"
+
+            if await self.check_win_condition(winning_numbers[spin - 1]) and len([x for x in slots_split[spin - 1] if "despairge" in x]) == 0 or spin == spins and spins_won == 0:
                 embed = embedBuilder(bot).embed(
                     color=color,
                     author="Slots",
-                    description=f"-# You lost all {spins} spins. Displaying only one to avoid spam.\n{description}",
+                    description=embed_desc,
                     footer=f"Jackpot stash: {jackpot}"
                     )
                 embeds.append(embed)
 
         for spin in range(len(slots_split)):
-            if self.gambling_data["slots"]["slot1"].index(slots_split[spin][0]) == self.gambling_data["slots"]["slot2"].index(slots_split[spin][1]) == self.gambling_data["slots"]["slot3"].index(slots_split[spin][2]):
+            if await self.check_win_condition(winning_numbers[spin]) and len([x for x in slots_split[spin] if "despairge" in x]) == 0:
                 if eph:
                     eph = False
-                winnings += win_con[f'{slots_split[spin][0]}']
-                if slots_split[spin][0] == self.gambling_data["slots"]["slot1"][4]:
+
+                winnings += win_con[f'{self.gambling_data["slots"][winning_numbers[spin][0]]}']
+                if self.gambling_data["slots"][0.05] in slots_split[spin][0]:
                     winnings += await self.get_jackpot(ctx.guild.id, "subtract", 0)
+
                 await self.economy.add_money(winnings, ctx.guild.id, ctx.author.id)
                 followup = f"Winning spins: **{spins_won}**\nYou won: **{winnings}** {self.economy.server_data[ctx.guild.id]['currency']}!"
             else:
@@ -189,7 +197,6 @@ class Gambling(commands.Cog):
 
         await ctx.send(embeds=embeds, ephemeral=eph)
         await ctx.send(followup, ephemeral=eph)
-        
 
     # Methods
 
@@ -204,6 +211,17 @@ class Gambling(commands.Cog):
             return jackpot
         elif action == "get":
             return value
+        
+    async def find_closest_key(self, dictionary, num):
+        higher_keys = [key for key in dictionary.keys() if key > num]
+        if not higher_keys:
+            return max(dictionary.keys())
+        closest_higher_key = min(higher_keys)
+        return closest_higher_key
+    
+    async def check_win_condition(self, arr):
+        counts = Counter(arr)
+        return any(count >= 3 for count in counts.values())
     
     # Roulette
 
