@@ -24,7 +24,6 @@ class embedBuilder(commands.Cog):
             if "#" in color: color = color.replace("#", "")
             color = int(color, 16)
         if timestamp != None:
-            print(type(timestamp))
             timestamp = datetime.datetime.fromtimestamp(int(float(timestamp)))
         self.embed = discord.Embed(title=title, description=description, url=url, color=color, timestamp=timestamp)
         self.embed.set_author(name=author, url=author_url, icon_url=author_avatar)

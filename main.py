@@ -66,7 +66,7 @@ async def on_ready():
             author=bot.user,
             author_avatar=bot.user.avatar,
             description=f"**Bot is online**",
-            timestamp=f"{datetime.datetime.now().isoformat()}"
+            timestamp=f"{datetime.datetime.now().timestamp()}"
         )
     await discordIntegration(bot).send_embed(OWNER_ID, embed)
 
