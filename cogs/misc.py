@@ -69,7 +69,7 @@ class Misc(commands.Cog):
 
         server = await self.bot.fetch_guild(ctx.guild.id)
         embed = embedBuilder(bot).embed(
-                color=0xffd330,
+                color="#ffd330",
                 author=f"{server.name} blacklist",
                 author_avatar=server.icon,
                 title="New entry",
@@ -106,7 +106,7 @@ class Misc(commands.Cog):
             if len(unique_data) == 0:
                 description = "There are no entries yet"
             embed = embedBuilder(bot).embed(
-                color=0xffd330,
+                color="#ffd330",
                 author=f"{server.name} blacklist",
                 author_avatar=server.icon,
                 description=description,
@@ -121,7 +121,7 @@ class Misc(commands.Cog):
                 timestamp = entry[6]
                 description += f"-# Added <t:{timestamp}:R> by {author.display_name}:\n{reason}\n\n"
             embed = embedBuilder(bot).embed(
-                color=0xffd330,
+                color="#ffd330",
                 author=f"{server.name} blacklist",
                 author_avatar=server.icon,
                 description=f"### [{entries[0][2]}]({entries[0][3]})\n{description}"
@@ -147,7 +147,7 @@ class Misc(commands.Cog):
             timestamp = math.floor(datetime.datetime.now().timestamp()) + 60
             server = await self.bot.fetch_guild(self.ctx.guild.id)
             embed = embedBuilder(bot).embed(
-                    color=0xffd330,
+                    color="#ffd330",
                     author=f"{server.name} blacklist",
                     author_avatar=server.icon,
                     description=f"### This will delete the entry for: [{self.entry[2]}]({self.entry[3]})\nAre you sure?\nThis window will timeout <t:{timestamp}:R>"
@@ -162,7 +162,7 @@ class Misc(commands.Cog):
             database.commit()
             server = await self.bot.fetch_guild(self.ctx.guild.id)
             embed = embedBuilder(self.bot).embed(
-                color=0x75FF81,
+                color="#75FF81",
                 author=f"{server.name} Blacklist",
                 author_avatar=server.icon,
                 description=f"### Entry for [{self.entry[2]}]({self.entry[3]}) was deleted."
@@ -203,11 +203,11 @@ class Misc(commands.Cog):
             context += f"{var}: {val}\n"
 
         embed = embedBuilder(bot).embed(
-                color=0xffd330,
+                color="#ffd330",
                 author="Context",
                 author_avatar=self.bot.user.avatar,
                 description=f"```py\n{context}\n```",
-                timestamp=f"{datetime.datetime.now().isoformat()}"
+                timestamp=f"{datetime.datetime.now().timestamp()}"
             )
         await ctx.send(embed=embed, ephemeral=True)
 

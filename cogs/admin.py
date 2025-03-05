@@ -2,6 +2,7 @@ import discord
 from discord import app_commands
 from discord.ext import commands
 from discord.app_commands import Choice
+from cogs.embedBuilder import embedBuilder
 
 import os
 from dotenv import find_dotenv, load_dotenv
@@ -38,12 +39,18 @@ class Admin(commands.Cog):
         await ctx.send(f'Purging messages...')
         deleted = await ctx.channel.purge(limit=amount+1)
         if len(deleted) == 0:
-            embed = discord.Embed(title='Purge "complete"', color=0xED1B53)
-            embed.description = 'No messages were deleted (bruh)'
+            embed = embedBuilder(self.bot).embed(
+                color = "#ED1B53",
+                title = 'Purge "complete"',
+                description = 'No messages were deleted (bruh)'
+                )
             await ctx.send(embed=embed)
         else:
-            embed = discord.Embed(title='Purge complete', color=0x75FF81)
-            embed.description = f'{len(deleted)} messages were deleted'
+            embed = embedBuilder(self.bot).embed(
+                color = "#75FF81",
+                title = 'Purge complete',
+                description = f'{len(deleted)} messages were deleted'
+                )
             await ctx.send(embed=embed)
 
     @commands.has_permissions(manage_messages=True)

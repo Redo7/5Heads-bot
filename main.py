@@ -21,7 +21,10 @@ intents.message_content = True
 class Custom_help(commands.MinimalHelpCommand):
     async def send_pages(self):
         destination = self.get_destination()
-        e = discord.Embed(color=0xffd330, description='')
+        e = embedBuilder(self.bot).embed(
+                color = "#ffd330",
+                description = ''
+                )
         for page in self.paginator.pages:
             e.description += page
         await destination.send(embed=e)
@@ -59,7 +62,7 @@ async def on_ready():
     print(f'Logged in as {bot.user}')
     if os.getenv('TOKEN') == os.getenv('DEV'): return
     embed = embedBuilder(bot).embed(
-            color=0x75FF81,
+            color="#75FF81",
             author=bot.user,
             author_avatar=bot.user.avatar,
             description=f"**Bot is online**",
@@ -90,7 +93,7 @@ async def on_command_error(ctx: commands.Context, error):
         title = "An unexpected error occurred."
         print(traceback_str)
     embed = embedBuilder(bot).embed(
-                color=0xed1b53,
+                color="#ed1b53",
                 author=title,
                 author_avatar=bot.user.avatar,
                 description=f"```py\n{error}\n```",

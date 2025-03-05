@@ -60,7 +60,7 @@ class Recruit(commands.Cog):
         if additional_link != None:
             fields = [{"name": "Profile Link", "value": profile_link, "inline": False}, {"name": "Additional Link", "value": additional_link, "inline": False}]
         embed = embed_cog.embed(
-            color=0xffd330,
+            color="#ffd330",
             author="New potential 5Head",
             thumbnail=avatar_link,
             title=name,

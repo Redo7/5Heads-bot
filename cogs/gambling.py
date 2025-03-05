@@ -145,7 +145,7 @@ class Gambling(commands.Cog):
         for spin in range(1, spins + 1):
             slots = ""
             embed_desc = ""
-            color = 0xffd330
+            color = "#ffd330"
             this_spin = []
 
             for emote in range(1, 4):
@@ -163,7 +163,7 @@ class Gambling(commands.Cog):
             if await self.check_win_condition(winning_numbers[spin - 1]) and len([x for x in slots_split[spin - 1] if "despairge" in x]) == 0:
                 spin_count = f"{spin} ✅"
                 spins_won += 1
-                color = 0x75FF81
+                color = "#75FF81"
                 embed_desc = f"`Spin #{spin_count}`\n{description}"
             elif spin == spins and spins_won == 0:
                 embed_desc = f"-# You lost all {spins} spins. Displaying only one to avoid spam.\n{description}"
@@ -247,7 +247,7 @@ class Gambling(commands.Cog):
 
         async def initial_response(self):
             embed = embedBuilder(bot).embed(
-                color=0xffd330,
+                color="#ffd330",
                 author="Roulette",
                 author_avatar=self.bot.user.avatar,
                 description="Choose your bet",
@@ -381,12 +381,12 @@ class Gambling(commands.Cog):
             if res == True:
                 res = "You Win!"
                 desc=f"Your winnings: **{self.bet * multiplier} {self.economy.server_data[self.ctx.guild.id]['currency']}**"
-                color = 0x75FF81
+                color = "#75FF81"
                 await self.economy.add_money(self.bet * multiplier, interaction.guild_id, interaction.user.id)
             else:
                 res = "You Lose!"
                 desc = f"You lost: **{self.bet} {self.economy.server_data[self.ctx.guild.id]['currency']}**"
-                color = 0xed1b53
+                color = "#ed1b53"
                 await self.economy.subtract_money(self.bet, interaction.guild_id, interaction.user.id)
 
             embed = embedBuilder(self.bot).embed(
@@ -707,7 +707,7 @@ class Gambling(commands.Cog):
             await self.draw_card(self.deck, self.player)
 
             title = "Choose your next move"
-            color = 0xffd330
+            color = "#ffd330"
             curr_view = self
 
             dealer_cards = await self.convert_hand(self.dealer)
@@ -718,7 +718,7 @@ class Gambling(commands.Cog):
 
             if player_blackjack and dealer_blackjack == False:
                 title = "You got a blackjack!"
-                color = 0x75FF81
+                color = "#75FF81"
                 curr_view = None
                 await self.economy.add_money(self.bet * 1.5, self.ctx.guild.id, self.ctx.author.id)
 
@@ -742,7 +742,7 @@ class Gambling(commands.Cog):
             await interaction.response.defer()
             await self.draw_card(self.deck, hand)
             embed = embedBuilder(self.bot).embed(
-                    color=0xffd330,
+                    color="#ffd330",
                     author="Blackjack",
                     author_avatar=self.bot.user.avatar,
                     title="Choose your next move",
@@ -774,44 +774,44 @@ class Gambling(commands.Cog):
 
             if dealer_score > 21:
                 win_con = "The dealer busted. You win!"
-                color = 0x75FF81
+                color = "#75FF81"
                 await self.economy.add_money(self.bet, interaction.guild_id, interaction.user.id)
             elif player_score > 21:
                 win_con = "You busted."
-                color = 0xed1b53
+                color = "#ed1b53"
                 await self.economy.subtract_money(self.bet, interaction.guild_id, interaction.user.id)
             elif dealer_blackjack and player_blackjack == False:
                 win_con = "The dealer got a blackjack. You lose."
-                color = 0xed1b53
+                color = "#ed1b53"
                 await self.economy.subtract_money(self.bet, interaction.guild_id, interaction.user.id)
 
             if dealer_score >= 17 and not win_con:
                 if player_score == dealer_score:
                     win_con = "Nobody won. Bet returned"
-                    color = 0xffd330
+                    color = "#ffd330"
                 elif player_score == 21:
                     win_con = "You win!"
-                    color = 0x75FF81
+                    color = "#75FF81"
                     await self.economy.add_money(self.bet, interaction.guild_id, interaction.user.id)
                 elif dealer_score == 21:
                     win_con = "The dealer won."
-                    color = 0xed1b53
+                    color = "#ed1b53"
                     await self.economy.subtract_money(self.bet, interaction.guild_id, interaction.user.id)
                 elif player_score > dealer_score and player_score < 21:
                     win_con = "You win!"
-                    color = 0x75FF81
+                    color = "#75FF81"
                     await self.economy.add_money(self.bet, interaction.guild_id, interaction.user.id)
                 elif dealer_score > player_score and dealer_score < 21:
                     win_con = "The dealer won."
-                    color = 0xed1b53
+                    color = "#ed1b53"
                     await self.economy.subtract_money(self.bet, interaction.guild_id, interaction.user.id)
                 elif player_score - 21 < dealer_score - 21:
                     win_con = "You win!"
-                    color = 0x75FF81
+                    color = "#75FF81"
                     await self.economy.add_money(self.bet, interaction.guild_id, interaction.user.id)
                 else:
                     win_con = "Dealer wins"
-                    color = 0xed1b53
+                    color = "#ed1b53"
                     await self.economy.subtract_money(self.bet, interaction.guild_id, interaction.user.id)
                 
             if win_con is not False:

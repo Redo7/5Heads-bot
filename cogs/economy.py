@@ -105,7 +105,7 @@ class Economy(commands.Cog):
         user = await self.bot.fetch_user(ctx.author.id)
         balance = await self.get_user_balance(ctx.guild.id, ctx.author.id)
         embed = embedBuilder(bot).embed(
-            color=0xffd330,
+            color="#ffd330",
             author=user.display_name,
             author_avatar=user.avatar,
             description=f"Your current balance is ***{balance}*** {self.server_data[ctx.guild.id]['currency']}",
@@ -121,7 +121,7 @@ class Economy(commands.Cog):
         cursor.execute(f"UPDATE economy SET epm = (?) WHERE server_id = (?)", (amount, ctx.guild.id,))
         database.commit()
         embed = embedBuilder(bot).embed(
-            color=0xffd330,
+            color="#ffd330",
             author_avatar=self.bot.user.avatar,
             author="5Head",
             description=f"EPM for **`{ctx.guild.name}`** was adjusted to **`{amount}`**",
@@ -138,7 +138,7 @@ class Economy(commands.Cog):
         cursor.execute(f"UPDATE economy SET currency = (?) WHERE server_id = (?)", (name, ctx.guild.id,))
         database.commit()
         embed = embedBuilder(bot).embed(
-            color=0xffd330,
+            color="#ffd330",
             author_avatar=self.bot.user.avatar,
             author="5Head",
             description=f"**`{name}`** is now the currency in **`{ctx.guild.name}`**",
@@ -164,12 +164,12 @@ class Economy(commands.Cog):
         await self.subtract_money(amount, ctx.guild.id, sender.id)
         await self.add_money(amount, ctx.guild.id, target.id)
         embed = embedBuilder(bot).embed(
-            color=0xffd330,
+            color="#ffd330",
             author=sender.display_name,
             author_avatar=sender.display_avatar,
             title=f"Sent {amount} {self.server_data[ctx.guild.id]['currency']} to {target.display_name}",
             thumbnail=target.display_avatar,
-            timestamp=f"{datetime.datetime.now().isoformat()}",
+            timestamp=f"{datetime.datetime.now().timestamp()}",
             )
         await ctx.send(f"{target.mention}", embed=embed)
 
@@ -183,12 +183,12 @@ class Economy(commands.Cog):
         sender = await self.bot.fetch_user(ctx.author.id)
         target = await self.bot.fetch_user(target.id) # This is the person transfering the funds / the target of the command
         embed = embedBuilder(bot).embed(
-            color=0xffd330,
+            color="#ffd330",
             author=target.display_name,
             author_avatar=target.display_avatar,
             title=f"{sender.display_name} requests a transfer of {amount} {self.server_data[ctx.guild.id]['currency']}",
             thumbnail=sender.display_avatar,
-            timestamp=f"{datetime.datetime.now().isoformat()}",
+            timestamp=f"{datetime.datetime.now().timestamp()}",
             )
         await ctx.send(f"{target.mention}", embed=embed, view=self.transferView(bot, ctx.guild.id, sender, target, amount, self))
 
@@ -208,23 +208,23 @@ class Economy(commands.Cog):
             await interaction.message.delete()
             if self.amount > await self.economy.get_user_balance(self.guild_id, self.target.id):
                 embed = embedBuilder(bot).embed(
-                    color=0xed1b53,
+                    color="#ed1b53",
                     author=self.sender.display_name,
                     author_avatar=self.sender.display_avatar,
                     description=f"Insufficient funds. Transaction did not occur.",
-                    timestamp=f"{datetime.datetime.now().isoformat()}",
+                    timestamp=f"{datetime.datetime.now().timestamp()}",
                     )
                 await interaction.response.send_message(embed=embed)
                 return
             await self.economy.subtract_money(self.amount, self.guild_id, self.target.id)
             await self.economy.add_money(self.amount, self.guild_id, self.sender.id)
             embed = embedBuilder(bot).embed(
-                color=0x75FF81,
+                color="#75FF81",
                 author=self.target.display_name,
                 author_avatar=self.target.display_avatar,
                 title=f"Sent {self.amount} {self.economy.currency} to {self.sender.display_name}",
                 thumbnail=self.sender.display_avatar,
-                timestamp=f"{datetime.datetime.now().isoformat()}",
+                timestamp=f"{datetime.datetime.now().timestamp()}",
                 )
             await interaction.response.send_message(f"{self.sender.mention}", embed=embed)
         
@@ -233,11 +233,11 @@ class Economy(commands.Cog):
             if interaction.user.id != self.target.id: return
             await interaction.message.delete()
             embed = embedBuilder(bot).embed(
-                color=0xed1b53,
+                color="#ed1b53",
                 author=self.target.display_name,
                 author_avatar=self.target.display_avatar,
                 description=f"Transaction declined.",
-                timestamp=f"{datetime.datetime.now().isoformat()}",
+                timestamp=f"{datetime.datetime.now().timestamp()}",
                 )
             await interaction.response.send_message(f"{self.sender.mention}", embed=embed)
     
