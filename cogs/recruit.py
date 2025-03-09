@@ -55,11 +55,10 @@ class Recruit(commands.Cog):
         cursor.execute('UPDATE voting SET against = (?) WHERE voting_id = (?)', (json.dumps([]), uid))
         database.commit()
         # Prep Embed
-        embed_cog = embedBuilder(bot)
         fields = [{"name": "Profile Link", "value": profile_link, "inline": False}]
         if additional_link != None:
             fields = [{"name": "Profile Link", "value": profile_link, "inline": False}, {"name": "Additional Link", "value": additional_link, "inline": False}]
-        embed = embed_cog.embed(
+        embed = embedBuilder(self.bot).embed(
             color="#ffd330",
             author="New potential 5Head",
             thumbnail=avatar_link,
@@ -70,11 +69,17 @@ class Recruit(commands.Cog):
             )
         try:
             # Dispatch
-            voting_msg = await self.recruit_channel.send(embed=embed, view=RecruitView(uid))
+            data = cursor.execute('SELECT role_id FROM roles WHERE server_id = ? AND description = ?', (ctx.guild.id, "recruit")).fetchone()
+            if data:
+                guild = self.bot.get_guild(ctx.guild.id)
+                role = guild.get_role(data[0])
+                voting_msg = await self.recruit_channel.send(f"{role.mention}", embed=embed, view=RecruitView(uid))
+            else: 
+                voting_msg = await self.recruit_channel.send(embed=embed, view=RecruitView(uid))
             await execute_query(f'UPDATE voting SET msg = ({voting_msg.id}) WHERE voting_id = ("{uid}")')
             await ctx.send(f"Voting posted in {self.recruit_channel.jump_url}", ephemeral=True)
-        except Exception as e:
-            print(f"Error occurred during dispatch: {e}")
+        except Exception:
+            raise ValueError("Error occurred during dispatch")
 
     # End Voting Command
     @bot.hybrid_command(name='endvoting', description='Finalize voting by ID')
@@ -102,9 +107,9 @@ class Recruit(commands.Cog):
             # Delete DB entry
             await execute_query(f'DELETE FROM voting WHERE voting_id = "{uid}"')
         except discord.NotFound:
-            await ctx.send(f"Message with ID {uid} not found.", ephemeral=True)
+            raise ValueError(f"Message with ID {uid} not found.")
         except discord.Forbidden:
-            await ctx.send("I do not have the necessary permissions to delete this message.", ephemeral=True)
+            raise ValueError("Missing permission to delete this message.")
 
 # View Setup
 class RecruitView(View):

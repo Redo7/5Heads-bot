@@ -1,4 +1,6 @@
 import discord
+import sqlite3
+from typing import Optional
 from discord import app_commands
 from discord.ext import commands
 from discord.app_commands import Choice
@@ -12,6 +14,21 @@ intents = discord.Intents.default()
 intents.message_content = True
 OWNER_ID = int(os.getenv('OWNER_ID'))
 bot = commands.Bot(command_prefix='!', owner_id=OWNER_ID, intents=intents)
+
+database = sqlite3.connect('db/main.db')
+cursor = database.cursor()
+database.execute('''
+CREATE TABLE IF NOT EXISTS roles (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    server_id BIGINT NOT NULL,
+    channel_id BIGINT NOT NULL,
+    message_id BIGINT NOT NULL,
+    role_id BIGINT NOT NULL,
+    emoji TEXT NOT NULL,
+    description TEXT,
+    UNIQUE(server_id, message_id, emoji)
+)
+''')
 
 class Admin(commands.Cog):
     def __init__(self, bot):
@@ -72,6 +89,60 @@ class Admin(commands.Cog):
             await self.purge(ctx, count + 1)
         else:
             await ctx.send("This command must be used as a reply to a message.")
+
+    @app_commands.checks.has_permissions(manage_roles=True)
+    @bot.hybrid_command(name="createreactionrole", description="Create a reaction role message")
+    @app_commands.describe(channel="The channel to send the message in", role="The role to assign", emoji="The emoji to use as a reaction", description="Used for database lookup for certain features")
+    async def createreactionrole(self, ctx: commands.Context, channel: discord.TextChannel, role: discord.Role, emoji: str, description: Optional[str]):
+        if not ctx.guild.me.guild_permissions.manage_roles:
+            raise ValueError("Missing permission to manage roles.")
+
+        if role.position >= ctx.guild.me.top_role.position:
+            raise ValueError("Can not assign a role because it's higher than the bot's highest role.")
+
+        message = await channel.send(f"React with {emoji} to get the {role.mention} role")
+        await message.add_reaction(emoji)
+
+        cursor.execute('''
+            INSERT INTO roles (server_id, channel_id, message_id, role_id, emoji, description)
+            VALUES (?, ?, ?, ?, ?, ?)
+            ''', (ctx.guild.id, channel.id, message.id, role.id, str(emoji), description))
+        database.commit()
+
+        embed = embedBuilder(bot).embed(
+                color="#ffd330",
+                author="Role assignment",
+                author_avatar=self.bot.user.avatar,
+                description=f"Reaction role message created in {channel.mention}"
+            )
+        await ctx.send(embed=embed)
+
+    @commands.Cog.listener()
+    async def on_raw_reaction_add(self, payload):
+        await self.fetch_role_action("add", payload)
+
+    @commands.Cog.listener()
+    async def on_raw_reaction_remove(self, payload):
+        await self.fetch_role_action("remove", payload)
+
+    async def fetch_role_action(self, action, payload):
+        data = cursor.execute('''
+                SELECT role_id FROM roles
+                WHERE server_id = ? AND message_id = ? AND emoji = ?
+        ''', (payload.guild_id, payload.message_id, str(payload.emoji))).fetchone()
+        if data:
+            role_id = data[0]
+            guild = self.bot.get_guild(payload.guild_id)
+            role = guild.get_role(role_id)
+            member = guild.get_member(payload.user_id)
+            if member is None:
+                member = await guild.fetch_member(payload.user_id)
+            if not role or not member: return
+            if action == "add":
+                await member.add_roles(role)
+            elif action == "remove":
+                await member.remove_roles(role)
+                
 
 async def setup(bot):
     await bot.add_cog(Admin(bot))
