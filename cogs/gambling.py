@@ -130,10 +130,10 @@ class Gambling(commands.Cog):
 
         win_con = {
             f'{self.gambling_data["slots"][0.70]}': 0,
-            f'{self.gambling_data["slots"][0.50]}': 75,
-            f'{self.gambling_data["slots"][0.30]}': 150,
-            f'{self.gambling_data["slots"][0.15]}': 300,
-            f'{self.gambling_data["slots"][0.05]}': 500
+            f'{self.gambling_data["slots"][0.50]}': 750,
+            f'{self.gambling_data["slots"][0.30]}': 1500,
+            f'{self.gambling_data["slots"][0.15]}': 3000,
+            f'{self.gambling_data["slots"][0.05]}': 5000
         }
         spins_won = 0
         slots_split = []
