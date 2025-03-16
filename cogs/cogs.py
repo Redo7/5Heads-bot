@@ -1,7 +1,9 @@
 import discord
+import datetime
 from discord import app_commands
 from discord.ext import commands
 from discord.app_commands import Choice
+from cogs.embedBuilder import embedBuilder
 
 import os
 from dotenv import find_dotenv, load_dotenv
@@ -21,6 +23,20 @@ class Cogs(commands.Cog):
     async def on_ready(self):
         print(f"Cog commands loaded")
 
+    @commands.hybrid_group(name="owner", description="Owner commands")
+    @commands.is_owner()
+    async def owner(self, ctx):
+        if ctx.invoked_subcommand is None:
+            await ctx.send("Please specify a subcommand.")
+
+    @owner.command(name="sync", description="Syncs commands", hidden=True)
+    @commands.is_owner()
+    async def sync(self, ctx):
+        resp = await self.bot.tree.sync()   
+        msg = f"Syncing {len(resp)} commands."  
+        await ctx.send(msg) 
+        print(msg)
+
     choices = [
         Choice(name="Admin", value="admin"),
         Choice(name="Config", value="config"),
@@ -34,9 +50,10 @@ class Cogs(commands.Cog):
         Choice(name="Tenor", value="tenor")
         ]
 
-    @bot.hybrid_command(name="reload", description="Reloads a cog", hidden=True)
+    @owner.command(name="reload", description="Reloads a cog", hidden=True)
     @app_commands.describe(name="The cog to reload")
     @app_commands.choices(name=choices)
+    @commands.is_owner()
     async def reload(self, ctx, name: Choice[str],):
         try:
             await self.bot.reload_extension(f"cogs.{name.value}")
@@ -47,13 +64,11 @@ class Cogs(commands.Cog):
             await ctx.send(e, ephemeral=True)
             print(e)
 
-    @bot.hybrid_command(name="load", description="Reloads a cog", hidden=True)
+    @owner.command(name="load", description="Reloads a cog", hidden=True)
     @app_commands.describe(name="The cog to load")
     @app_commands.choices(name=choices)
+    @commands.is_owner()
     async def load(self, ctx, name: Choice[str],):
-        if ctx.author.id != OWNER_ID:
-            await ctx.send("Nah uh")
-            return
         try:
             await self.bot.load_extension(f"cogs.{name.value}")
             msg = f"{name.name} cog loaded"
@@ -63,13 +78,11 @@ class Cogs(commands.Cog):
             await ctx.send(e, ephemeral=True)
             print(e)
 
-    @bot.hybrid_command(name="unload", description="Unloads a cog", hidden=True)
+    @owner.command(name="unload", description="Unloads a cog", hidden=True)
     @app_commands.describe(name="The cog to unload")
     @app_commands.choices(name=choices)
+    @commands.is_owner()
     async def unload(self, ctx, name: Choice[str],):
-        if ctx.author.id != OWNER_ID:
-            await ctx.send("Nah uh")
-            return
         try:
             await self.bot.unload_extension(f"cogs.{name.value}")
             msg = f"{name.name} cog unloaded"
@@ -78,6 +91,21 @@ class Cogs(commands.Cog):
         except Exception as e:
             await ctx.send(e, ephemeral=True)
             print(e)
+
+    @owner.command(name="context", description="Log message context")
+    async def context_misc(self, ctx: commands.Context) -> None:
+        context = ""
+        for var, val in vars(ctx).items():
+            context += f"{var}: {val}\n"
+
+        embed = embedBuilder(bot).embed(
+                color="#ffd330",
+                author="Context",
+                author_avatar=self.bot.user.avatar,
+                description=f"```py\n{context}\n```",
+                timestamp=f"{datetime.datetime.now().timestamp()}"
+            )
+        await ctx.send(embed=embed, ephemeral=True)
 
 async def setup(bot):
     await bot.add_cog(Cogs(bot))

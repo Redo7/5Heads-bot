@@ -196,21 +196,6 @@ class Misc(commands.Cog):
         req = requests.post(f"https://cooltext.com/PostChange?{endpoints[text_type.name]}").json()
         await ctx.send(req['renderLocation'].replace('https', 'http'))
 
-    @bot.hybrid_command(name="context", description="Log message context")
-    async def context_misc(self, ctx: commands.Context) -> None:
-        context = ""
-        for var, val in vars(ctx).items():
-            context += f"{var}: {val}\n"
-
-        embed = embedBuilder(bot).embed(
-                color="#ffd330",
-                author="Context",
-                author_avatar=self.bot.user.avatar,
-                description=f"```py\n{context}\n```",
-                timestamp=f"{datetime.datetime.now().timestamp()}"
-            )
-        await ctx.send(embed=embed, ephemeral=True)
-
     @bot.hybrid_command(name="widepeepohappy", description="Sends a widepeepoHappy emote")
     async def widepeepohappy(self, ctx: commands.Context) -> None:
         await ctx.send('<:WidePeepoHappy1:768481090079686677><:WidePeepoHappy2:768481089936818216><:WidePeepoHappy3:768481090029355038><:WidePeepoHappy4:768481090041413653>')

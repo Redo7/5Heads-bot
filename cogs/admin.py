@@ -10,9 +10,10 @@ import os
 from dotenv import find_dotenv, load_dotenv
 dotenv_path = find_dotenv()
 load_dotenv(dotenv_path)
+OWNER_ID = int(os.getenv('OWNER_ID'))
+
 intents = discord.Intents.default()
 intents.message_content = True
-OWNER_ID = int(os.getenv('OWNER_ID'))
 bot = commands.Bot(command_prefix='!', owner_id=OWNER_ID, intents=intents)
 
 database = sqlite3.connect('db/main.db')
@@ -38,20 +39,13 @@ class Admin(commands.Cog):
     @commands.Cog.listener()
     async def on_ready(self):
         print(f"Admin cog loaded")
+    
+    def is_admin(interaction: discord.Interaction) -> bool:
+        return interaction.user.guild_permissions.administrator
 
-    @bot.hybrid_command(name="sync", description="Syncs commands", hidden=True)
-    async def sync(self, ctx):
-        if ctx.author.id != OWNER_ID:
-            await ctx.send("Nah uh")
-            return
-        resp = await self.bot.tree.sync()   
-        msg = f"Syncing {len(resp)} commands."  
-        await ctx.send(msg) 
-        print(msg)
-
-    @commands.has_permissions(manage_messages=True)
     @bot.hybrid_command(name='purge', description='Deletes a specified number of messages from the current channel')
     @app_commands.describe(amount="The amount of messages to delete")
+    @commands.has_permissions(manage_messages=True)
     async def purge(self, ctx, amount: int):
         await ctx.send(f'Purging messages...')
         deleted = await ctx.channel.purge(limit=amount+1)
@@ -70,8 +64,8 @@ class Admin(commands.Cog):
                 )
             await ctx.send(embed=embed)
 
-    @commands.has_permissions(manage_messages=True)
     @commands.hybrid_command(name="safepurge", description="Reply to a message to delete everything after it")
+    @commands.has_permissions(manage_messages=True)
     async def safe_purge(self, ctx):
         if ctx.interaction is not None:
             await ctx.send("This command must be invoked with `!safepurge`")
@@ -89,10 +83,11 @@ class Admin(commands.Cog):
             await self.purge(ctx, count + 1)
         else:
             await ctx.send("This command must be used as a reply to a message.")
-
-    @app_commands.checks.has_permissions(manage_roles=True)
+    
     @bot.hybrid_command(name="createreactionrole", description="Create a reaction role message")
     @app_commands.describe(channel="The channel to send the message in", role="The role to assign", emoji="The emoji to use as a reaction", description="Used for database lookup for certain features")
+    @app_commands.checks.has_permissions(manage_roles=True)
+    @app_commands.check(is_admin)
     async def createreactionrole(self, ctx: commands.Context, channel: discord.TextChannel, role: discord.Role, emoji: str, description: Optional[str]):
         if not ctx.guild.me.guild_permissions.manage_roles:
             raise ValueError("Missing permission to manage roles.")

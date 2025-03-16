@@ -13,7 +13,7 @@ from dotenv import find_dotenv, load_dotenv
 dotenv_path = find_dotenv()
 load_dotenv(dotenv_path)
 TOKEN = os.getenv('TOKEN')
-OWNER_ID = os.getenv('OWNER_ID')
+OWNER_ID = int(os.getenv('OWNER_ID'))
 RECRUIT_CHANNEL = int(os.getenv('RECRUIT_CHANNEL'))
 intents = discord.Intents.default()
 intents.message_content = True
@@ -92,14 +92,16 @@ async def on_command_error(ctx: commands.Context, error):
     else:
         title = "An unexpected error occurred."
         print(traceback_str)
-    embed = embedBuilder(bot).embed(
+    try:
+        embed = embedBuilder(bot).embed(
                 color="#ed1b53",
                 author=title,
                 author_avatar=bot.user.avatar,
                 description=f"```py\n{error}\n```",
-                timestamp=f"{datetime.datetime.now().isoformat()}"
+                timestamp=f"{datetime.datetime.now().timestamp()}"
             )
-    await ctx.send(embed=embed, ephemeral=True)
+        await ctx.send(embed=embed, ephemeral=True)
+    except Exception as e: print(e)
 
 async def main():
     await load()  # Load the cogs

@@ -119,8 +119,8 @@ class Gambling(commands.Cog):
     async def slots(self, ctx, spins: Optional[int]):
         if ctx.interaction is None: 
             raise ValueError('This command can only be used as /slots')
-        if spins > 100: raise ValueError("You can only do up to 100 spins at a time")
         spins = 1 if spins == None else spins
+        if spins > 100: raise ValueError("You can only do up to 100 spins at a time")
         required_amount = 10
         user_balance = await self.economy.get_user_balance(ctx.guild.id, ctx.author.id)
         jackpot = await self.get_jackpot(ctx.guild.id, "get", 0)
