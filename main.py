@@ -60,9 +60,6 @@ bot.help_command = Custom_help()
 @bot.event
 async def on_ready():
     print(f'Logged in as {bot.user}')
-    resp = await bot.tree.sync()   
-    msg = f"Syncing {len(resp)} commands."  
-    print(msg)
     if os.getenv('TOKEN') == os.getenv('DEV'): return
     embed = embedBuilder(bot).embed(
             color="#75FF81",
