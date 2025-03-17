@@ -1,27 +1,32 @@
+import os
 import discord
 import datetime
+import requests
 from discord import app_commands
 from discord.ext import commands
+from cogs.discordIntegration import *
 from discord.app_commands import Choice
 from cogs.embedBuilder import embedBuilder
 
-import os
 from dotenv import find_dotenv, load_dotenv
 dotenv_path = find_dotenv()
 load_dotenv(dotenv_path)
+OWNER_ID = int(os.getenv('OWNER_ID'))
+HOSTING_API_KEY = os.getenv('HOSTING_API_KEY')
+RESTART_ENDPOINT = os.getenv('RESTART_ENDPOINT')
+
 intents = discord.Intents.default()
 intents.message_content = True
-OWNER_ID = int(os.getenv('OWNER_ID'))
 bot = commands.Bot(command_prefix='!', owner_id=OWNER_ID, intents=intents)
 
-class Cogs(commands.Cog):
+class Owner(commands.Cog):
     def __init__(self, bot):
         self.bot = bot
         self.owner_id = int(os.getenv('OWNER_ID'))
 
     @commands.Cog.listener()
     async def on_ready(self):
-        print(f"Cog commands loaded")
+        print(f"Owner cog loaded")
 
     @commands.hybrid_group(name="owner", description="Owner commands")
     @commands.is_owner()
@@ -36,6 +41,26 @@ class Cogs(commands.Cog):
         msg = f"Syncing {len(resp)} commands."  
         await ctx.send(msg) 
         print(msg)
+    
+    @owner.command(name="restart", description="Restarts the bot", hidden=True)
+    @commands.is_owner()
+    async def restart_bot(self, ctx):
+        headers = {
+            'Authorization': f'Bearer {HOSTING_API_KEY}',
+            'Content-Type': 'application/json'
+        }
+        embed = embedBuilder(self.bot).embed(
+            color="#ed1b53",
+            author=self.bot.user,
+            author_avatar=self.bot.user.avatar,
+            description=f"**Bot is offline**",
+            timestamp=f"{datetime.datetime.now().timestamp()}"
+        )
+        await discordIntegration(self.bot).send_embed(OWNER_ID, embed)
+        await ctx.send("Restarting...", ephemeral=True)
+        response = requests.post(RESTART_ENDPOINT, headers=headers, json={'signal': 'restart'})
+        if response.status_code != 204:
+            raise ValueError(f'Request failed with status code {response.status_code}')
 
     choices = [
         Choice(name="Admin", value="admin"),
@@ -108,4 +133,4 @@ class Cogs(commands.Cog):
         await ctx.send(embed=embed, ephemeral=True)
 
 async def setup(bot):
-    await bot.add_cog(Cogs(bot))
+    await bot.add_cog(Owner(bot))
