@@ -21,7 +21,7 @@ intents.message_content = True
 class Custom_help(commands.MinimalHelpCommand):
     async def send_pages(self):
         destination = self.get_destination()
-        e = embedBuilder(self.bot).embed(
+        e = embedBuilder(bot).embed(
                 color = "#ffd330",
                 description = ''
                 )
