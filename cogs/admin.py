@@ -52,14 +52,14 @@ class Admin(commands.Cog):
         if len(deleted) == 0:
             embed = embedBuilder(self.bot).embed(
                 color = "#ED1B53",
-                title = 'Purge "complete"',
+                author = 'Purge "complete"',
                 description = 'No messages were deleted (bruh)'
                 )
             await ctx.send(embed=embed)
         else:
             embed = embedBuilder(self.bot).embed(
                 color = "#75FF81",
-                title = 'Purge complete',
+                author = 'Purge complete',
                 description = f'{len(deleted)} messages were deleted'
                 )
             await ctx.send(embed=embed)
