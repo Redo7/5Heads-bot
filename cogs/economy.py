@@ -43,6 +43,19 @@ class Economy(commands.Cog):
     @commands.Cog.listener()
     async def on_ready(self):
         print(f"Economy cog loaded")
+    
+    @bot.event
+    async def on_guild_join(self, guild):
+        query = 'SELECT * FROM economy WHERE server_id = ?'
+        data = cursor.execute(query, (guild.id,)).fetchall()   
+        if data != [] and guild.id == data[0][0]:
+            print(f'[Economy] Joined "{guild}" ({guild.id}), but found an existing database entry. Skipping...')
+            return
+        else:
+            print(f'[Economy] Creating new database entry for "{guild}" ({guild.id})')
+            query = 'INSERT INTO economy (server_id, currency, epm) VALUES (?, ? ,?)'
+            cursor.execute(query, (guild.id, self.currency, self.epm))
+            database.commit()
 
         # Task Loop
 
