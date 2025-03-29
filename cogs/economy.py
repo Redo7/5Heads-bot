@@ -44,7 +44,7 @@ class Economy(commands.Cog):
     async def on_ready(self):
         print(f"Economy cog loaded")
     
-    @bot.event
+    @commands.Cog.listener()
     async def on_guild_join(self, guild):
         query = 'SELECT * FROM economy WHERE server_id = ?'
         data = cursor.execute(query, (guild.id,)).fetchall()   

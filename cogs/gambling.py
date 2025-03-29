@@ -33,7 +33,7 @@ class Gambling(commands.Cog):
     async def on_ready(self):
         print(f"Gambling cog loaded")
 
-    @bot.event
+    @commands.Cog.listener()
     async def on_guild_join(self, guild):
         query = 'SELECT * FROM gambling WHERE server_id = ?'
         data = cursor.execute(query, (guild.id,)).fetchall()   
