@@ -189,9 +189,10 @@ class Misc(commands.Cog):
             "Burning": f"LogoID=4&Text={text}&FontSize=70&Color1_color=%23ff0000&Integer1=15&Boolean1=on&Integer9=0&Integer13=on&Integer12=on&BackgroundColor_color=%23ffffff",
             "Flaming": f"LogoID=1169711118&Text={text}&FontSize=90&Color1_color=%234D0000&Integer1=90&Integer9=0&Integer13=on&Integer12=on&BackgroundColor_color=%23FFFFFF",
             "Glitter": f"LogoID=44&Text={text}&FontSize=50&Color1_color=%23FF00AB&Integer1=100&Color2_color=%23FFFFFF&Integer9=0&Integer13=on&Integer12=on&BackgroundColor_color=%23FFB6E7",
-            "Love": f"LogoID=4768360740&Text={text}&FontSize=70&Color1_color=%23FF1491&Color2_color=%23FFFFFF&Color3_color=%23FF1491&Integer9=0&Integer13=on&Integer12=on&BackgroundColor_color=%23FFFFFF",
+            "Love": f"LogoID=819721038&Text={text}&FontSize=70&Color1_color=%23FF1491&Color2_color=%23FFFFFF&Color3_color=%23FF1491&Integer9=0&Integer13=on&Integer12=on&BackgroundColor_color=%23FFFFFF",
             "Molten Core": f"LogoID=43&Text={text}&FontSize=70&Integer9=0&Integer13=on&Integer12=on&BackgroundColor_color=%23FFFFFF"
         }
+
 
         req = requests.post(f"https://cooltext.com/PostChange?{endpoints[text_type.name]}").json()
         await ctx.send(req['renderLocation'].replace('https', 'http'))
