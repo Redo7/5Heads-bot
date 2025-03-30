@@ -57,7 +57,7 @@ class Owner(commands.Cog):
             timestamp=f"{datetime.datetime.now().timestamp()}"
         )
         await discordIntegration(self.bot).send_embed(OWNER_ID, embed)
-        await ctx.send("Restarting...", ephemeral=True)
+        await ctx.send("Restarting...")
         response = requests.post(RESTART_ENDPOINT, headers=headers, json={'signal': 'restart'})
         if response.status_code != 204:
             raise ValueError(f'Request failed with status code {response.status_code}')
