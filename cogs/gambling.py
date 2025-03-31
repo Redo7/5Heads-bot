@@ -165,13 +165,16 @@ class Gambling(commands.Cog):
                 spins_won += 1
                 color = "#75FF81"
                 embed_desc = f"`Spin #{spin_count}`\n{description}"
+            elif spins == 1 and spins_won == 0:
+                embed_desc = description
             elif spin == spins and spins_won == 0:
                 embed_desc = f"-# You lost all {spins} spins. Displaying only one to avoid spam.\n{description}"
 
             if await self.check_win_condition(winning_numbers[spin - 1]) and len([x for x in slots_split[spin - 1] if "despairge" in x]) == 0 or spin == spins and spins_won == 0:
                 embed = embedBuilder(bot).embed(
                     color=color,
-                    author="Slots",
+                    author=ctx.author.display_name,
+                    author_avatar=ctx.author.avatar,
                     description=embed_desc,
                     footer=f"Jackpot stash: {jackpot}"
                     )
@@ -391,8 +394,8 @@ class Gambling(commands.Cog):
 
             embed = embedBuilder(self.bot).embed(
                 color=color,
-                author="Roulette",
-                author_avatar=self.bot.user.avatar,
+                author=interaction.user.display_name,
+                author_avatar=interaction.user.avatar,
                 title=res,
                 description=f"The number was: {await Gambling.RouletteView.get_color(num, self.gambling_data)} **{num}**\n{desc}",
                 footer=f"{bet_type} • {self.bet} • {multiplier}x"
@@ -722,10 +725,12 @@ class Gambling(commands.Cog):
                 curr_view = None
                 await self.economy.add_money(self.bet * 1.5, self.ctx.guild.id, self.ctx.author.id)
 
+            user = await self.bot.fetch_user(self.ctx.author.id)
+
             embed = embedBuilder(self.bot).embed(
                     color=color,
-                    author="Blackjack",
-                    author_avatar=self.bot.user.avatar,
+                    author=user.display_name,
+                    author_avatar=user.avatar,
                     title=title,
                     description=f"""
                     # `Dealer: {await self.calculate_score(self.dealer)}`\n
@@ -743,8 +748,8 @@ class Gambling(commands.Cog):
             await self.draw_card(self.deck, hand)
             embed = embedBuilder(self.bot).embed(
                     color="#ffd330",
-                    author="Blackjack",
-                    author_avatar=self.bot.user.avatar,
+                    author=interaction.user.display_name,
+                    author_avatar=interaction.user.avatar,
                     title="Choose your next move",
                     description=f"""
                     # `Dealer: {await self.calculate_score(self.dealer)}`\n
@@ -817,8 +822,8 @@ class Gambling(commands.Cog):
             if win_con is not False:
                 embed = embedBuilder(self.bot).embed(
                         color=color,
-                        author="Blackjack",
-                        author_avatar=self.bot.user.avatar,
+                        author=interaction.user.display_name,
+                        author_avatar=interaction.user.avatar,
                         title=win_con,
                         description=f"""
                         # `Dealer: {dealer_score}`\n
