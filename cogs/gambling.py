@@ -127,6 +127,7 @@ class Gambling(commands.Cog):
         if user_balance < required_amount * spins:
             await ctx.send("broke ahh", ephemeral=True)
             return
+        await self.economy.subtract_money(required_amount * spins, ctx.guild.id, ctx.author.id)
 
         win_con = {
             f'{self.gambling_data["slots"][0.70]}': 0,
@@ -192,7 +193,6 @@ class Gambling(commands.Cog):
                 await self.economy.add_money(winnings, ctx.guild.id, ctx.author.id)
                 followup = f"Winning spins: **{spins_won}**\nYou won: **{winnings}** {self.economy.server_data[ctx.guild.id]['currency']}!"
             else:
-                await self.economy.subtract_money(required_amount, ctx.guild.id, ctx.author.id)
                 await self.economy.add_money(required_amount * 0.75, ctx.guild.id, self.bot.user.id)
                 await self.get_jackpot(ctx.guild.id, "add", required_amount * 0.25)
                 if spins_won == 0:
