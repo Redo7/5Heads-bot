@@ -71,8 +71,10 @@ async def on_ready():
     await discordIntegration(bot).send_embed(OWNER_ID, embed)
 
 async def load():
+    await bot.load_extension(f"cogs.economy") # Load economy first to prevent access errors
+    print(f"Loading economy cog")
     for filename in os.listdir("./cogs"):
-        if filename.endswith(".py"):
+        if filename.endswith(".py") and "economy" not in filename:
             print(f"Loading {filename[:-3]} cog")
             await bot.load_extension(f"cogs.{filename[:-3]}")
 
