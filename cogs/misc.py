@@ -41,13 +41,13 @@ class Misc(commands.Cog):
     async def blacklist_add(self, ctx, name: str, link: str, reason: str):
         if ctx.interaction is None: 
             raise ValueError('This command can only be used as /blacklistadd')
-        if re.compile(r".+([A-Za-z]+(\.[A-Za-z]+)+).+", re.IGNORECASE).match(link) is None:
+        if re.compile(r"^(https?://)?([\w\-]+\.)+[a-z]{2,}(/[\w\-./?%&=]*)?$", re.IGNORECASE,).match(link) is None:
             raise ValueError('The value in the link field does not resemble a link.\nExpected: https://site.com/username OR site.com/username')
-        if "http://" not in link or "https://" not in link:
+        if "http://" not in link and "https://" not in link:
             link = f"https://{link}"
         # Search for existing listing
-        existing_listing = await self.check_listing_exist(name, link)
-        largest_id = await self.get_largest_id()
+        existing_listing = await self.check_listing_exist(ctx.guild.id, name, link)
+        largest_id = await self.get_largest_id(ctx.guild.id)
         # Replace content to match the previous listing
         listing_id = 0
         if existing_listing:
@@ -78,13 +78,19 @@ class Misc(commands.Cog):
             )
         await ctx.send(embed=embed)
     
-    async def check_listing_exist(self, name, link):
-        data = cursor.execute("SELECT * from blacklist WHERE name = ? OR link = ?", (name, link)).fetchone()
+    async def check_listing_exist(self, server_id, name, link):
+        query = """
+            SELECT * from blacklist
+                WHERE server_id = ?
+                AND name = ? COLLATE NOCASE
+                OR link = ? COLLATE NOCASE
+            """
+        data = cursor.execute(query, (server_id, name, link)).fetchone()
         database.commit()
         return data
 
-    async def get_largest_id(self):
-        data = cursor.execute("SELECT listing_id from blacklist").fetchall()
+    async def get_largest_id(self, server_id):
+        data = cursor.execute("SELECT listing_id from blacklist WHERE server_id = ?", (server_id,)).fetchall()
         database.commit()
         return data
 
@@ -113,7 +119,7 @@ class Misc(commands.Cog):
                 footer="Use /blacklist {id} for more information about the entry."
             )
         else:
-            entries = cursor.execute("SELECT * from blacklist WHERE listing_id = ?", (listing_id,)).fetchall()
+            entries = cursor.execute("SELECT * from blacklist WHERE listing_id = ?  AND server_id = ?", (listing_id, ctx.guild.id)).fetchall()
             if len(entries) == 0: raise ValueError("No entry with a given ID exists.")
             for entry in entries:
                 reason = entry[4]
