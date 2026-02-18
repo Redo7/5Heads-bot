@@ -39,15 +39,21 @@ class Misc(commands.Cog):
     @app_commands.describe(link="Link to the person's profile (best to use twitter)")
     @app_commands.describe(reason="The reason why the person has been added")
     async def blacklist_add(self, ctx, name: str, link: str, reason: str):
+        
+        # Remove quere params from link (if there are any)
+        link = link.split("?")[0]
+
         if ctx.interaction is None: 
             raise ValueError('This command can only be used as /blacklistadd')
         if re.compile(r"^(https?://)?([\w\-]+\.)+[a-z]{2,}(/[\w\-./?%&=]*)?$", re.IGNORECASE,).match(link) is None:
             raise ValueError('The value in the link field does not resemble a link.\nExpected: https://site.com/username OR site.com/username')
         if "http://" not in link and "https://" not in link:
             link = f"https://{link}"
+        
         # Search for existing listing
         existing_listing = await self.check_listing_exist(ctx.guild.id, name, link)
         largest_id = await self.get_largest_id(ctx.guild.id)
+        
         # Replace content to match the previous listing
         listing_id = 0
         if existing_listing:
