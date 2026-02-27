@@ -189,14 +189,15 @@ class Gambling(commands.Cog):
                 winnings += win_con[f'{self.gambling_data["slots"][winning_numbers[spin][0]]}']
                 if self.gambling_data["slots"][0.05] in slots_split[spin][0]:
                     winnings += await self.get_jackpot(ctx.guild.id, "subtract", 0)
-
-                await self.economy.add_money(winnings, ctx.guild.id, ctx.author.id)
-                followup = f"Winning spins: **{spins_won}**\nYou won: **{winnings}** {self.economy.server_data[ctx.guild.id]['currency']}!"
             else:
                 await self.economy.add_money(required_amount * 0.75, ctx.guild.id, self.bot.user.id)
                 await self.get_jackpot(ctx.guild.id, "add", required_amount * 0.25)
-                if spins_won == 0:
-                    followup = "You won fuck all!"
+
+        if spins_won > 0:
+            await self.economy.add_money(winnings, ctx.guild.id, ctx.author.id)
+            followup = f"Winning spins: **{spins_won}**\nYou won: **{winnings}** {self.economy.server_data[ctx.guild.id]['currency']}!"
+        else:
+            followup = "You won fuck all!"
 
         await ctx.send(embeds=embeds, ephemeral=eph)
         await ctx.send(followup, ephemeral=eph)
