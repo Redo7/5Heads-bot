@@ -49,9 +49,9 @@ class Recruit(commands.Cog):
     @app_commands.describe(name="The name of the invitee")
     @app_commands.describe(avatar_link="The direct link to their avatar (Right click avatar > Open image in new tab > Copy link)")
     @app_commands.describe(profile_link="Twitter/Social media profile link")
-    @app_commands.describe(additional_link="Any additional link")
     @app_commands.describe(description="Bio / Short description of the invitee")
-    async def recruit(self, ctx, name: str, avatar_link: str, profile_link: str, additional_link: str, description: str) -> None:
+    @app_commands.describe(additional_link="Any additional link")
+    async def recruit(self, ctx, name: str, avatar_link: str, profile_link: str, description: str, additional_link: Optional[str]) -> None:
         # Prep DB
         uid = str(uuid.uuid4())
         print(f'Creating new database entry for voting {uid}')
