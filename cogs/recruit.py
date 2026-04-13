@@ -122,7 +122,7 @@ class RecruitView(View):
         super().__init__(timeout=timeout)
         self.uid = uid
 
-    @discord.ui.button(emoji="✅", label="Vote For", style=discord.ButtonStyle.green)
+    @discord.ui.button(emoji="✅", label="Vote For", style=discord.ButtonStyle.green, custom_id="vote_for")
     async def vote_for(self, interaction: discord.Interaction, button: discord.ui.Button):
         try:
             await interaction.response.defer(ephemeral=True, thinking=True)
@@ -134,7 +134,7 @@ class RecruitView(View):
             await interaction.followup.send("You voted for ✅")
         except Exception as e: print(e)
 
-    @discord.ui.button(emoji="✖️", label="Vote Against", style=discord.ButtonStyle.red)
+    @discord.ui.button(emoji="✖️", label="Vote Against", style=discord.ButtonStyle.red, custom_id="vote_against")
     async def vote_against(self, interaction: discord.Interaction, button: discord.ui.Button):
         try:
             await interaction.response.defer(ephemeral=True, thinking=True)
