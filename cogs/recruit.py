@@ -38,6 +38,11 @@ class Recruit(commands.Cog):
         self.recruit_channel = self.bot.get_channel(int(os.getenv('RECRUIT_CHANNEL'))) 
         if self.recruit_channel is None:
             print(f"Error: Could not find channel with ID: {RECRUIT_CHANNEL}")
+        query = 'SELECT * FROM voting'
+        data = cursor.execute(query, ()).fetchall()
+        for entry in data:
+            bot.add_view(view=RecruitView(entry[0]), message_id=entry[1])
+            
 
     # Initial Command
     @bot.hybrid_command(name='recruit', description='Indocrinate a new member into the server')
