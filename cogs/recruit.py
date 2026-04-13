@@ -41,7 +41,7 @@ class Recruit(commands.Cog):
         query = 'SELECT * FROM voting'
         data = cursor.execute(query, ()).fetchall()
         for entry in data:
-            bot.add_view(view=RecruitView(entry[0]), message_id=entry[1])
+            self.bot.add_view(view=RecruitView(entry[0]), message_id=entry[1])
             
 
     # Initial Command
