@@ -1,6 +1,8 @@
+import re
 import os
 import json
 import uuid
+import asyncio
 import sqlite3
 import discord
 from cogs import config
@@ -9,7 +11,7 @@ from cogs.embedBuilder import embedBuilder
 from typing import Optional
 from discord import app_commands
 from discord.ext import commands
-from discord.ui import View, Button
+from discord.ui import View, Button, DynamicItem
 
 from dotenv import find_dotenv, load_dotenv
 dotenv_path = find_dotenv()
@@ -30,18 +32,25 @@ class Recruit(commands.Cog):
     def __init__(self, bot):
         self.bot = bot
         self.recruit_channel = None
+        asyncio.create_task(self.register_views())
 
+    async def register_views(self):
+        await self.bot.wait_until_ready()
+        
+        query = 'SELECT * FROM voting'
+        data = cursor.execute(query, ()).fetchall()
+        for entry in data:
+            print(f"Registering voting with ID: {entry[0]}")
+            self.bot.add_view(view=RecruitView(entry[0]), message_id=entry[1])
 
     @commands.Cog.listener()
     async def on_ready(self):
         print(f"Recruit cog loaded")
+
         self.recruit_channel = self.bot.get_channel(int(os.getenv('RECRUIT_CHANNEL'))) 
         if self.recruit_channel is None:
-            print(f"Error: Could not find channel with ID: {RECRUIT_CHANNEL}")
-        query = 'SELECT * FROM voting'
-        data = cursor.execute(query, ()).fetchall()
-        for entry in data:
-            self.bot.add_view(view=RecruitView(entry[0]), message_id=entry[1])
+            print(f"Error: Could not find channel")
+            return
             
 
     # Initial Command
@@ -117,13 +126,16 @@ class Recruit(commands.Cog):
             raise ValueError("Missing permission to delete this message.")
 
 # View Setup
-class RecruitView(View):
-    def __init__(self, uid, timeout=None):
-        super().__init__(timeout=timeout)
+class VoteForButton(DynamicItem[discord.ui.Button], template=r'vote_for:(?P<uid>[a-f0-9-]+)'):
+    def __init__(self, uid: str) -> None:
+        super().__init__(discord.ui.Button(emoji="✅", label="Vote For", style=discord.ButtonStyle.green, custom_id=f'vote_for:{uid}',))
         self.uid = uid
 
-    @discord.ui.button(emoji="✅", label="Vote For", style=discord.ButtonStyle.green, custom_id="vote_for")
-    async def vote_for(self, interaction: discord.Interaction, button: discord.ui.Button):
+    @classmethod
+    async def from_custom_id(cls, interaction: discord.Interaction, item: discord.ui.Button, match: re.Match[str], /,):
+        return cls(match['uid'])
+
+    async def callback(self, interaction: discord.Interaction) -> None:
         try:
             await interaction.response.defer(ephemeral=True, thinking=True)
             data = cursor.execute('SELECT * FROM voting WHERE voting_id = ?', (self.uid,)).fetchall()
@@ -134,8 +146,17 @@ class RecruitView(View):
             await interaction.followup.send("You voted for ✅")
         except Exception as e: print(e)
 
-    @discord.ui.button(emoji="✖️", label="Vote Against", style=discord.ButtonStyle.red, custom_id="vote_against")
-    async def vote_against(self, interaction: discord.Interaction, button: discord.ui.Button):
+
+class VoteAgainstButton(DynamicItem[discord.ui.Button], template=r'vote_against:(?P<uid>[a-f0-9-]+)'):
+    def __init__(self, uid: str) -> None:
+        super().__init__(discord.ui.Button(emoji="✖️", label="Vote Against", style=discord.ButtonStyle.red, custom_id=f'vote_against:{uid}',))
+        self.uid = uid
+
+    @classmethod
+    async def from_custom_id(cls, interaction: discord.Interaction, item: discord.ui.Button, match: re.Match[str], /,):
+        return cls(match['uid'])
+
+    async def callback(self, interaction: discord.Interaction) -> None:
         try:
             await interaction.response.defer(ephemeral=True, thinking=True)
             data = cursor.execute('SELECT * FROM voting WHERE voting_id = ?', (self.uid,)).fetchall()
@@ -145,6 +166,13 @@ class RecruitView(View):
             await check_vote(interaction, self.uid, data[0][3], data[0][2], str(interaction.user.id), 'against', 'for')
             await interaction.followup.send("You voted against ❌")
         except Exception as e: print(e)
+
+
+def RecruitView(uid: str) -> discord.ui.View:
+    view = discord.ui.View(timeout=None)
+    view.add_item(VoteForButton(uid))
+    view.add_item(VoteAgainstButton(uid))
+    return view
 
 async def check_vote(interaction, vote_id, check_for, check_against, user_id, db_for, db_against):
     if user_id in check_against:
