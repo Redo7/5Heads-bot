@@ -1,3 +1,5 @@
+from prometheus_client import Gauge, Histogram, Enum
+from prometheus_client import Counter as PromCounter
 import random
 import discord
 import sqlite3
@@ -17,6 +19,21 @@ intents = discord.Intents.default()
 intents.message_content = True
 OWNER_ID = int(os.getenv('OWNER_ID'))
 bot = commands.Bot(command_prefix='!', owner_id=OWNER_ID, intents=intents)
+
+SLOTS_SPINS = PromCounter('slots_spins_total', 'Total number of slot spins', ['user_name', 'server_id', 'result'])
+SLOTS_WINNINGS = Histogram('slots_winnings', 'Distribution of slot winnings/losses', ['user_name', 'server_id'], buckets=[0, 100, 500, 1000, 2500, 5000, 10000, float('inf')])
+
+ROULETTE_BETS = PromCounter('roulette_bets_total', 'Total roulette bets placed', ['user_name', 'server_id', 'bet_type', 'result'])
+ROULETTE_AMOUNT = Histogram('roulette_bet_amount', 'Distribution of roulette bet amounts', ['user_name', 'server_id', 'bet_type'], buckets=[10, 50, 100, 500, 1000, 5000, float('inf')])
+
+BLACKJACK_GAMES = PromCounter('blackjack_games_total', 'Total blackjack games played', ['user_name', 'server_id', 'outcome'] )
+BLACKJACK_BET_AMOUNT = Histogram('blackjack_bet_amount', 'Distribution of blackjack bet amounts', ['user_name', 'server_id'], buckets=[10, 50, 100, 500, 1000, 5000, float('inf')])
+
+JACKPOT_SIZE = Gauge('jackpot_current_size', 'Current jackpot size per guild', ['server_id'])
+JACKPOT_WINS = PromCounter('jackpot_wins_total', 'Total jackpot wins', ['user_name', 'server_id']) 
+JACKPOT_PAYOUT = Histogram('jackpot_payout_amount', 'Distribution of jackpot payouts', ['user_name', 'server_id'], buckets=[500, 1000, 5000, 10000, 50000, float('inf')])
+
+INSUFFICIENT_BALANCE = PromCounter('insufficient_balance_attempts_total', 'Attempts to gamble without sufficient balance', ['user_name', 'server_id', 'game'])
 
 database = sqlite3.connect('db/main.db')
 cursor = database.cursor()
@@ -103,9 +120,10 @@ class Gambling(commands.Cog):
             amount = entry[1]
             self.gambling_data["jackpot"][server_id] = amount
 
-    async def check_bet_balance(self, ctx, bet):
+    async def check_bet_balance(self, ctx, bet, source):
         user_balance = await self.economy.get_user_balance(ctx.guild.id, ctx.author.id)
         if user_balance < bet:
+            INSUFFICIENT_BALANCE.labels(user_name=ctx.author.name, server_id=ctx.guild.id, game=source).inc()
             await ctx.send("broke ahh", ephemeral=True)
             return True
         elif bet <= 0:
@@ -127,7 +145,7 @@ class Gambling(commands.Cog):
         if user_balance < required_amount * spins:
             await ctx.send("broke ahh", ephemeral=True)
             return
-        await self.economy.subtract_money(required_amount * spins, ctx.guild.id, ctx.author.id)
+        await self.economy.subtract_money(required_amount * spins, ctx.guild.id, ctx.author.id, "slots")
 
         win_con = {
             f'{self.gambling_data["slots"][0.70]}': 0,
@@ -190,13 +208,17 @@ class Gambling(commands.Cog):
                 if self.gambling_data["slots"][0.05] in slots_split[spin][0]:
                     winnings += await self.get_jackpot(ctx.guild.id, "subtract", 0)
             else:
-                await self.economy.add_money(required_amount * 0.75, ctx.guild.id, self.bot.user.id)
-                await self.get_jackpot(ctx.guild.id, "add", required_amount * 0.25)
+                await self.economy.add_money(required_amount * 0.75, ctx.guild.id, self.bot.user.id, "slots")
+                await self.get_jackpot(ctx.guild.id, "add", required_amount * 0.25, ctx.author)
 
         if spins_won > 0:
-            await self.economy.add_money(winnings, ctx.guild.id, ctx.author.id)
+            SLOTS_WINNINGS.labels(user_name=ctx.author.name, server_id=ctx.guild.id).observe(winnings)
+            SLOTS_SPINS.labels(user_name=ctx.author.name, server_id=ctx.guild.id, result="win").inc(spins_won)
+            SLOTS_SPINS.labels(user_name=ctx.author.name, server_id=ctx.guild.id, result="lose").inc(spins - spins_won)
+            await self.economy.add_money(winnings, ctx.guild.id, ctx.author.id, "slots")
             followup = f"Winning spins: **{spins_won}**\nYou won: **{winnings}** {self.economy.server_data[ctx.guild.id]['currency']}!"
         else:
+            SLOTS_SPINS.labels(user_name=ctx.author.name, server_id=ctx.guild.id, result="lose").inc(spins)
             followup = "You won fuck all!"
 
         await ctx.send(embeds=embeds, ephemeral=eph)
@@ -204,16 +226,21 @@ class Gambling(commands.Cog):
 
     # Methods
 
-    async def get_jackpot(self, server_id, action, amount):
+    async def get_jackpot(self, server_id, action, amount, user):
         value = self.gambling_data["jackpot"][server_id]
         if action == "add":
             value += amount
             self.gambling_data["jackpot"][server_id] = value
+            JACKPOT_SIZE.labels(server_id=server_id).inc(value)
         elif action == "subtract":
             jackpot = value
             self.gambling_data["jackpot"][server_id] = 500.0
+            JACKPOT_SIZE.labels(server_id=server_id).inc(value)
+            JACKPOT_WINS.labels(user_name=user.name, server_id=server_id).inc()
+            JACKPOT_PAYOUT.labels(user_name=user.name, server_id=server_id).observe(value)
             return jackpot
         elif action == "get":
+            JACKPOT_SIZE.labels(server_id=server_id).inc(value)
             return value
         
     async def find_closest_key(self, dictionary, num):
@@ -234,7 +261,7 @@ class Gambling(commands.Cog):
     async def roulette(self, ctx, bet: int):
         if ctx.interaction is None: 
             raise ValueError('This command can only be used as /roulette')
-        if await self.check_bet_balance(ctx, bet): return
+        if await self.check_bet_balance(ctx, bet, "roulette"): return
         await self.RouletteView(ctx, self.bot, self.economy, self.gambling_data, bet).initial_response()
         
 
@@ -243,6 +270,7 @@ class Gambling(commands.Cog):
             super().__init__(timeout=timeout)
             self.ctx = ctx
             self.bet = bet
+            self.bet_type = ""
             self.economy = economy
             self.bot = bot
             self.gambling_data = gambling_data['roulette']
@@ -262,6 +290,7 @@ class Gambling(commands.Cog):
         @discord.ui.button(emoji="🟥", style=discord.ButtonStyle.green)
         async def red(self, interaction: discord.Interaction, button: ui.Button):
             if interaction.user.id != self.ctx.author.id: return
+            self.bet_type = "red"
             num = await self.get_num(interaction)
             res = False
             if num in self.gambling_data['red']:
@@ -272,6 +301,7 @@ class Gambling(commands.Cog):
         @discord.ui.button(emoji="⬛", style=discord.ButtonStyle.green)
         async def black(self, interaction: discord.Interaction, button: ui.Button):
                 if interaction.user.id != self.ctx.author.id: return
+                self.bet_type = "black"
                 num = await self.get_num(interaction)
                 res = False
                 if num in self.gambling_data['black']:
@@ -282,6 +312,7 @@ class Gambling(commands.Cog):
         @discord.ui.button( label="Odd", style=discord.ButtonStyle.green)
         async def green(self, interaction: discord.Interaction, button: ui.Button):
             if interaction.user.id != self.ctx.author.id: return
+            self.bet_type = "odd"
             num = await self.get_num(interaction)
             res = False
             if num % 2 == 1:
@@ -292,6 +323,7 @@ class Gambling(commands.Cog):
         @discord.ui.button( label="Even", style=discord.ButtonStyle.green)
         async def even(self, interaction: discord.Interaction, button: ui.Button):
             if interaction.user.id != self.ctx.author.id: return
+            self.bet_type = "even"
             num = await self.get_num(interaction)
             res = False
             if num % 2 == 0:
@@ -302,6 +334,7 @@ class Gambling(commands.Cog):
         @discord.ui.button( label="High", style=discord.ButtonStyle.green)
         async def high(self, interaction: discord.Interaction, button: ui.Button):
             if interaction.user.id != self.ctx.author.id: return
+            self.bet_type = "high"
             num = await self.get_num(interaction)
             res = False
             if num > 18:
@@ -312,6 +345,7 @@ class Gambling(commands.Cog):
         @discord.ui.button( label="Low", style=discord.ButtonStyle.green)
         async def low(self, interaction: discord.Interaction, button: ui.Button):
             if interaction.user.id != self.ctx.author.id: return
+            self.bet_type = "low"
             num = await self.get_num(interaction)
             res = False
             if num <= 18:
@@ -322,6 +356,7 @@ class Gambling(commands.Cog):
         @discord.ui.button( label="Dozen", style=discord.ButtonStyle.green)
         async def dozen(self, interaction: discord.Interaction, button: ui.Button):
             if interaction.user.id != self.ctx.author.id: return
+            self.bet_type = "dozen"
             self.clear_items()
             self.add_item(self.DozenSelect(self, interaction, "Dozen", 2))
             await interaction.response.send_message(view=self, ephemeral=True)
@@ -330,6 +365,7 @@ class Gambling(commands.Cog):
         @discord.ui.button( label="Column", style=discord.ButtonStyle.green)
         async def column(self, interaction: discord.Interaction, button: ui.Button):
             if interaction.user.id != self.ctx.author.id: return
+            self.bet_type = "column"
             self.clear_items()
             self.add_item(self.ColumnSelect(self, interaction, "Column", 2))
             await interaction.response.send_message(view=self, ephemeral=True)
@@ -340,6 +376,7 @@ class Gambling(commands.Cog):
         @discord.ui.button( label="Line (Double Street)", style=discord.ButtonStyle.red)
         async def line(self, interaction: discord.Interaction, button: ui.Button):
             if interaction.user.id != self.ctx.author.id: return
+            self.bet_type = "line"
             self.clear_items()
             self.add_item(self.LineSelect(self, interaction, "Line (Double Street)", 5))
             await interaction.response.send_message(view=self, ephemeral=True)
@@ -348,6 +385,7 @@ class Gambling(commands.Cog):
         @discord.ui.button( label="Corner", style=discord.ButtonStyle.red)
         async def corner(self, interaction: discord.Interaction, button: ui.Button):
             if interaction.user.id != self.ctx.author.id: return
+            self.bet_type = "corner"
             self.clear_items()
             self.add_item(self.CornerSelect(self, interaction, "Corner", 8))
             await interaction.response.send_message(view=self, ephemeral=True)
@@ -356,6 +394,7 @@ class Gambling(commands.Cog):
         @discord.ui.button( label="Street", style=discord.ButtonStyle.red)
         async def street(self, interaction: discord.Interaction, button: ui.Button):
             if interaction.user.id != self.ctx.author.id: return
+            self.bet_type = "street"
             self.clear_items()
             self.add_item(self.StreetSelect(self, interaction, "Street", 11))
             await interaction.response.send_message(view=self, ephemeral=True)
@@ -364,12 +403,14 @@ class Gambling(commands.Cog):
         @discord.ui.button( label="Split", style=discord.ButtonStyle.red)
         async def split(self, interaction: discord.Interaction, button: ui.Button):
             if interaction.user.id != self.ctx.author.id: return
+            self.bet_type = "split"
             await interaction.response.send_modal(self.SplitSelect(self, interaction, "Split", 17))
             await self.message.delete()
         
         @discord.ui.button( label="Straight Up", style=discord.ButtonStyle.red)
         async def straight_up(self, interaction: discord.Interaction, button: ui.Button):
             if interaction.user.id != self.ctx.author.id: return
+            self.bet_type = "straight up"
             await interaction.response.send_modal(self.StraightSelect(self, interaction, "Straight Up", 35))
             await self.message.delete()
         
@@ -386,12 +427,17 @@ class Gambling(commands.Cog):
                 res = "You Win!"
                 desc=f"Your winnings: **{self.bet * multiplier} {self.economy.server_data[self.ctx.guild.id]['currency']}**"
                 color = "#75FF81"
-                await self.economy.add_money(self.bet * multiplier, interaction.guild_id, interaction.user.id)
+                ROULETTE_AMOUNT.labels(user_name=self.ctx.author.name, server_id=interaction.guild_id, bet_type=self.bet_type).observe(self.bet * multiplier)
+                ROULETTE_BETS.labels(user_name=self.ctx.author.name, server_id=interaction.guild_id, bet_type=self.bet_type, result="win").inc()
+                await self.economy.add_money(self.bet * multiplier, interaction.guild_id, interaction.user.id, "roulette")
             else:
                 res = "You Lose!"
                 desc = f"You lost: **{self.bet} {self.economy.server_data[self.ctx.guild.id]['currency']}**"
                 color = "#ed1b53"
-                await self.economy.subtract_money(self.bet, interaction.guild_id, interaction.user.id)
+                ROULETTE_AMOUNT.labels(user_name=self.ctx.author.name, server_id=interaction.guild_id, bet_type=self.bet_type).observe(self.bet)
+                ROULETTE_BETS.labels(user_name=self.ctx.author.name, server_id=interaction.guild_id, bet_type=self.bet_type, result="lose").inc()
+                await self.economy.subtract_money(self.bet, interaction.guild_id, interaction.user.id, "roulette")
+
 
             embed = embedBuilder(self.bot).embed(
                 color=color,
@@ -662,7 +708,7 @@ class Gambling(commands.Cog):
     async def blackjack(self, ctx, bet: int):
         if ctx.interaction is None: 
             raise ValueError('This command can only be used as /blackjack')
-        if await self.check_bet_balance(ctx, bet): return
+        if await self.check_bet_balance(ctx, bet, "blackjack"): return
         await self.Blackjack(self.economy, self.emotes, ctx, self.bot, bet).initial_response()
     
     class Blackjack(ui.View):
@@ -700,11 +746,13 @@ class Gambling(commands.Cog):
                 await self.ctx.send("broke ahh", ephemeral=True)
                 return
             self.bet *= 2
+            BLACKJACK_BET_AMOUNT.labels(self.ctx.author.id, server_id=self.ctx.guild.id).observe(self.bet)
             await self.advance_round(interaction, self.player)
             
         # Methods
 
         async def initial_response(self):
+            BLACKJACK_BET_AMOUNT.labels(self.ctx.author.id, server_id=self.ctx.guild.id).observe(self.bet)
             await self.draw_card(self.deck, self.dealer)
             await self.draw_card(self.deck, self.player)
             await self.draw_card(self.deck, self.hole_card["card"])
@@ -724,7 +772,8 @@ class Gambling(commands.Cog):
                 title = "You got a blackjack!"
                 color = "#75FF81"
                 curr_view = None
-                await self.economy.add_money(self.bet * 1.5, self.ctx.guild.id, self.ctx.author.id)
+                BLACKJACK_GAMES.labels(user_name=self.ctx.author.name, server_id=self.ctx.guild.id, outcome="blackjack").inc()
+                await self.economy.add_money(self.bet * 1.5, self.ctx.guild.id, self.ctx.author.id, "blackjack")
 
             user = await self.bot.fetch_user(self.ctx.author.id)
 
@@ -781,44 +830,48 @@ class Gambling(commands.Cog):
             if dealer_score > 21:
                 win_con = "The dealer busted. You win!"
                 color = "#75FF81"
-                await self.economy.add_money(self.bet, interaction.guild_id, interaction.user.id)
+                await self.economy.add_money(self.bet, interaction.guild_id, interaction.user.id, "blackjack")
             elif player_score > 21:
                 win_con = "You busted."
                 color = "#ed1b53"
-                await self.economy.subtract_money(self.bet, interaction.guild_id, interaction.user.id)
+                await self.economy.subtract_money(self.bet, interaction.guild_id, interaction.user.id, "blackjack")
             elif dealer_blackjack and player_blackjack == False:
                 win_con = "The dealer got a blackjack. You lose."
                 color = "#ed1b53"
-                await self.economy.subtract_money(self.bet, interaction.guild_id, interaction.user.id)
+                await self.economy.subtract_money(self.bet, interaction.guild_id, interaction.user.id, "blackjack")
 
             if dealer_score >= 17 and not win_con:
                 if player_score == dealer_score:
                     win_con = "Nobody won. Bet returned"
                     color = "#ffd330"
+                    BLACKJACK_GAMES.labels(user_name=self.ctx.author.name, server_id=self.ctx.guild.id, outcome="draw").inc()
                 elif player_score == 21:
                     win_con = "You win!"
                     color = "#75FF81"
-                    await self.economy.add_money(self.bet, interaction.guild_id, interaction.user.id)
+                    await self.economy.add_money(self.bet, interaction.guild_id, interaction.user.id, "blackjack")
                 elif dealer_score == 21:
                     win_con = "The dealer won."
                     color = "#ed1b53"
-                    await self.economy.subtract_money(self.bet, interaction.guild_id, interaction.user.id)
+                    BLACKJACK_GAMES.labels(user_name=self.ctx.author.name, server_id=self.ctx.guild.id, outcome="lose").inc()
+                    await self.economy.subtract_money(self.bet, interaction.guild_id, interaction.user.id, "blackjack")
                 elif player_score > dealer_score and player_score < 21:
                     win_con = "You win!"
                     color = "#75FF81"
-                    await self.economy.add_money(self.bet, interaction.guild_id, interaction.user.id)
+                    await self.economy.add_money(self.bet, interaction.guild_id, interaction.user.id, "blackjack")
                 elif dealer_score > player_score and dealer_score < 21:
                     win_con = "The dealer won."
                     color = "#ed1b53"
-                    await self.economy.subtract_money(self.bet, interaction.guild_id, interaction.user.id)
+                    BLACKJACK_GAMES.labels(user_name=self.ctx.author.name, server_id=self.ctx.guild.id, outcome="lose").inc()
+                    await self.economy.subtract_money(self.bet, interaction.guild_id, interaction.user.id, "blackjack")
                 elif player_score - 21 < dealer_score - 21:
                     win_con = "You win!"
                     color = "#75FF81"
-                    await self.economy.add_money(self.bet, interaction.guild_id, interaction.user.id)
+                    await self.economy.add_money(self.bet, interaction.guild_id, interaction.user.id, "blackjack")
                 else:
                     win_con = "Dealer wins"
                     color = "#ed1b53"
-                    await self.economy.subtract_money(self.bet, interaction.guild_id, interaction.user.id)
+                    BLACKJACK_GAMES.labels(user_name=self.ctx.author.name, server_id=self.ctx.guild.id, outcome="lose").inc()
+                    await self.economy.subtract_money(self.bet, interaction.guild_id, interaction.user.id, "blackjack")
                 
             if win_con is not False:
                 embed = embedBuilder(self.bot).embed(
@@ -835,6 +888,7 @@ class Gambling(commands.Cog):
                         footer=f"Current bet • {self.bet} {self.economy.server_data[self.ctx.guild.id]['currency']}"
                     )
                 self.win_con_sent = True
+                BLACKJACK_GAMES.labels(user_name=self.ctx.author.name, server_id=self.ctx.guild.id, outcome="win").inc()
                 await interaction.followup.send(embed=embed, ephemeral=True, view=Gambling.RouletteView.ForwardResult(self.ctx, embed))
                 return
 

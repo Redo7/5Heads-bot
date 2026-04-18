@@ -8,6 +8,7 @@ from typing import Optional
 from discord.ext import commands, tasks
 from discord import ui, app_commands
 from cogs.embedBuilder import embedBuilder
+from prometheus_client import Counter, Gauge, Histogram, Enum, Summary
 
 import os
 from dotenv import find_dotenv, load_dotenv
@@ -17,6 +18,7 @@ intents = discord.Intents.default()
 intents.message_content = True
 OWNER_ID = int(os.getenv('OWNER_ID'))
 bot = commands.Bot(command_prefix='!', owner_id=OWNER_ID, intents=intents)
+USER_BALANCE = Summary('user_balance', 'User balance', ['server_id', 'user_name', 'source'])
 
 database = sqlite3.connect('db/main.db')
 cursor = database.cursor()
@@ -28,21 +30,25 @@ class Economy(commands.Cog):
         self.bot = bot
         self.currency = "5Head Coins"
         self.epm = 0.5
-        data = cursor.execute("SELECT * FROM economy").fetchall()
         self.server_data = {}
+        self.user_data = {}
+
+    @commands.Cog.listener()
+    async def on_ready(self):
+        print(f"Economy cog loaded")
+        data = cursor.execute("SELECT * FROM economy").fetchall()
         for entry in data:
             self.server_data[entry[0]] = {"currency": entry[1], "epm": entry[2]}
+            data = cursor.execute("SELECT * FROM user_balance").fetchall()
+            
         data = cursor.execute("SELECT * FROM user_balance").fetchall()
-        self.user_data = {}
         for entry in data:
             server_id = entry[0]
             user_id = entry[1]
             user_balance = entry[2]
             self.user_data[(server_id, user_id)] = user_balance
-
-    @commands.Cog.listener()
-    async def on_ready(self):
-        print(f"Economy cog loaded")
+            user = await self.bot.fetch_user(user_id)
+            USER_BALANCE.labels(server_id=server_id, user_name=user.name).observe(user_balance)
     
     @commands.Cog.listener()
     async def on_guild_join(self, guild):
@@ -90,19 +96,21 @@ class Economy(commands.Cog):
         if message.author == self.bot.user:
             return
         
-        await self.add_money(self.server_data[message.guild.id]["epm"] + (random.random() * 10 / 100), message.guild.id, message.author.id)
+        await self.add_money(self.server_data[message.guild.id]["epm"] + (random.random() * 10 / 100), message.guild.id, message.author.id, "message")
 
     # Methods
 
-    async def add_money(self, add_balance, guild_id, user_id):
+    async def add_money(self, add_balance, guild_id, user_id, source):
         balance = await self.get_user_balance(guild_id, user_id)
         balance += add_balance
         self.user_data[(guild_id, user_id)] = float("%.2f" % balance)
+        USER_BALANCE.labels(server_id=guild_id, user_id=user_id, source=source).observe(float("%.2f" % balance))
     
-    async def subtract_money(self, sub_balance, guild_id, user_id):
+    async def subtract_money(self, sub_balance, guild_id, user_id, source):
         balance = await self.get_user_balance(guild_id, user_id)
         balance -= sub_balance
         self.user_data[(guild_id, user_id)] = float("%.2f" % balance)
+        USER_BALANCE.labels(server_id=guild_id, user_id=user_id, source=source).observe(float("%.2f" % balance))
 
     async def get_user_balance(self, guild_id, user_id):
         user_balance = self.user_data.get((guild_id, user_id), 0.0)
@@ -174,8 +182,8 @@ class Economy(commands.Cog):
             await ctx.send("Nah uh")
             return
         
-        await self.subtract_money(amount, ctx.guild.id, sender.id)
-        await self.add_money(amount, ctx.guild.id, target.id)
+        await self.subtract_money(amount, ctx.guild.id, sender.id, "funds donation")
+        await self.add_money(amount, ctx.guild.id, target.id, "funds donation")
         embed = embedBuilder(bot).embed(
             color="#ffd330",
             author=sender.display_name,
@@ -229,8 +237,8 @@ class Economy(commands.Cog):
                     )
                 await interaction.response.send_message(embed=embed)
                 return
-            await self.economy.subtract_money(self.amount, self.guild_id, self.target.id)
-            await self.economy.add_money(self.amount, self.guild_id, self.sender.id)
+            await self.economy.subtract_money(self.amount, self.guild_id, self.target.id, "funds request")
+            await self.economy.add_money(self.amount, self.guild_id, self.sender.id, "funds request")
             embed = embedBuilder(bot).embed(
                 color="#75FF81",
                 author=self.target.display_name,

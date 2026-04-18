@@ -1,3 +1,4 @@
+from prometheus_client import Counter, Gauge, Histogram, Enum
 import re
 import math
 import json
@@ -21,6 +22,7 @@ OWNER_ID = os.getenv('OWNER_ID')
 intents = discord.Intents.default()
 intents.message_content = True
 bot = commands.Bot(command_prefix='!', owner_id=OWNER_ID, intents=intents)
+BLACKLIST_ENTRIES = Gauge('blacklist_entries', 'Amount of entries on the blacklist', ['user_name', 'server_id'])
 
 database = sqlite3.connect('db/main.db')
 cursor = database.cursor()
@@ -33,6 +35,9 @@ class Misc(commands.Cog):
     @commands.Cog.listener()
     async def on_ready(self):
         print(f"Misc cog loaded")
+        entries = cursor.execute("SELECT * from blacklist", ()).fetchall()
+        for entry in entries:
+            BLACKLIST_ENTRIES.labels(user_name = entry[2], server_id = entry[0]).inc()
 
     @bot.hybrid_command(name="blacklistadd", description="Add a new entry to the wall of shame")
     @app_commands.describe(name="The username of the person")
@@ -72,6 +77,7 @@ class Misc(commands.Cog):
         query = "INSERT INTO blacklist (server_id, listing_id, name, link, reason, added_by, timestamp) VALUES (?, ?, ?, ?, ?, ?, ?)"
         cursor.execute(query, (ctx.guild.id, listing_id, name, link, reason, ctx.author.id, timestamp))
         database.commit()
+        BLACKLIST_ENTRIES.labels(user_name = name, server_id = ctx.guild.id).inc()
 
         server = await self.bot.fetch_guild(ctx.guild.id)
         embed = embedBuilder(bot).embed(
@@ -172,6 +178,7 @@ class Misc(commands.Cog):
             await self.message.delete()
             cursor.execute("DELETE FROM blacklist WHERE listing_id = ?", (self.entry[1],))
             database.commit()
+            BLACKLIST_ENTRIES.labels(user_name = self.entry[3], server_id = self.ctx.guild.id).dec()
             server = await self.bot.fetch_guild(self.ctx.guild.id)
             embed = embedBuilder(self.bot).embed(
                 color="#75FF81",

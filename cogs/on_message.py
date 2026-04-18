@@ -1,3 +1,4 @@
+from prometheus_client import Counter, Gauge, Histogram, Enum
 import time
 import os
 import time
@@ -10,6 +11,11 @@ OWNER_ID = os.getenv('OWNER_ID')
 intents = discord.Intents.default()
 intents.message_content = True
 bot = commands.Bot(command_prefix='!', owner_id=OWNER_ID, intents=intents)
+MESSAGE_COUNTER = Counter('messages_total', 'Messages sent', ['user_name', 'server_id'])
+LINKS_CONVERTED = Counter('links_converted', 'Twitter links converted', ['server_id'])
+LINKS_KEPT = Counter('links_kept', 'Twitter links converted, then kept', ['server_id'])
+LINKS_DELETED = Counter('links_deleted', 'Twitter links converted, then deleted', ['server_id'])
+
 
 class onMessage(commands.Cog):
     def __init__(self, bot):
@@ -25,6 +31,7 @@ class onMessage(commands.Cog):
 
     @commands.Cog.listener()
     async def on_message(self, message):
+        MESSAGE_COUNTER.labels(user_name=message.author, server_id=message.guild.id).inc()
         if ":3C====3" in message.content and message.author == self.bot.user:
             for frame in self.animation_3c:
                 await message.edit(content=frame)
@@ -41,7 +48,7 @@ class onMessage(commands.Cog):
                 msg_split = message.content.split(' ')
                 indices = [i for i, s in enumerate(msg_split) if link in s]
                 new_msg = await message.channel.send(msg_split[indices[0]].replace(link, "https://fxtwitter.com"))
-                
+                LINKS_CONVERTED.labels(server_id=message.guild.id).inc()
                 await new_msg.add_reaction('✔️')
                 await new_msg.add_reaction('✖️')
 
@@ -54,8 +61,10 @@ class onMessage(commands.Cog):
                     await new_msg.delete()
                 else:
                     if reaction.emoji == '✖️':
+                        LINKS_DELETED.labels(server_id=message.guild.id).inc()
                         await new_msg.delete()
                     elif reaction.emoji == '✔️':
+                        LINKS_KEPT.labels(server_id=message.guild.id).inc()
                         await new_msg.clear_reactions()
 
 async def setup(bot):

@@ -1,3 +1,4 @@
+from prometheus_client import Counter, Gauge, Histogram, Enum
 import re
 import os
 import json
@@ -22,6 +23,8 @@ intents = discord.Intents.default()
 intents.message_content = True
 intents.guilds = True
 bot = commands.Bot(command_prefix='!', owner_id=OWNER_ID, intents=intents)
+ACTIVE_RECRUITMENTS = Gauge('active_recruitments', 'The # of currently open recruitments', ['server_id'])
+
 
 RECRUIT_CHANNEL = int(os.getenv('RECRUIT_CHANNEL'))
 database = sqlite3.connect('db/main.db')
@@ -42,6 +45,7 @@ class Recruit(commands.Cog):
         for entry in data:
             print(f"Registering voting with ID: {entry[0]}")
             self.bot.add_view(view=RecruitView(entry[0]), message_id=entry[1])
+            ACTIVE_RECRUITMENTS.labels(server_id=entry[0]).inc()
 
     @commands.Cog.listener()
     async def on_ready(self):
@@ -90,6 +94,7 @@ class Recruit(commands.Cog):
                 voting_msg = await self.recruit_channel.send(f"{role.mention}", embed=embed, view=RecruitView(uid))
             else: 
                 voting_msg = await self.recruit_channel.send(embed=embed, view=RecruitView(uid))
+            ACTIVE_RECRUITMENTS.labels(server_id=ctx.guild.id).inc()
             await execute_query(f'UPDATE voting SET msg = ({voting_msg.id}) WHERE voting_id = ("{uid}")')
             await ctx.send(f"Voting posted in {self.recruit_channel.jump_url}", ephemeral=True)
         except Exception:
@@ -114,6 +119,7 @@ class Recruit(commands.Cog):
                 return
             verdict = f"The final vote for voting `{uid}` was: ✅ {votes_for}:{votes_against} ❌"
             await ctx.send(verdict)
+            ACTIVE_RECRUITMENTS.labels(server_id=ctx.guild.id).dec()
             # Delete discord message
             channel = self.recruit_channel
             message = await channel.fetch_message(message_id)
