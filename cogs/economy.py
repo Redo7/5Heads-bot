@@ -41,13 +41,17 @@ class Economy(commands.Cog):
             self.server_data[entry[0]] = {"currency": entry[1], "epm": entry[2]}
             
         data = cursor.execute("SELECT * FROM user_balance").fetchall()
+        i = 0
         for entry in data:
+            print(f"populating economy user_data: {i}/{len(data)}")
+            i += 1
             server_id = entry[0]
             user_id = entry[1]
             user_balance = entry[2]
             self.user_data[(server_id, user_id)] = user_balance
             user = await self.bot.fetch_user(user_id)
             USER_BALANCE.labels(server_id=server_id, user_name=user.name, source="init").set(user_balance)
+        print("done")
     
     @commands.Cog.listener()
     async def on_guild_join(self, guild):
@@ -103,14 +107,15 @@ class Economy(commands.Cog):
         balance = await self.get_user_balance(guild_id, user_id)
         balance += add_balance
         self.user_data[(guild_id, user_id)] = float("%.2f" % balance)
-        user = await bot.fetch_user(user_id)
+        user = await self.bot.fetch_user(user_id)
         USER_BALANCE.labels(server_id=guild_id, user_name=user.name, source=source).set(float("%.2f" % balance))
     
     async def subtract_money(self, sub_balance, guild_id, user_id, source):
         balance = await self.get_user_balance(guild_id, user_id)
         balance -= sub_balance
         self.user_data[(guild_id, user_id)] = float("%.2f" % balance)
-        user = await bot.fetch_user(user_id)
+        user = await self.bot.fetch_user(user_id)
+        print(guild_id, user.name)
         USER_BALANCE.labels(server_id=guild_id, user_name=user.name, source=source).set(float("%.2f" % balance))
 
     async def get_user_balance(self, guild_id, user_id):
