@@ -18,7 +18,7 @@ intents = discord.Intents.default()
 intents.message_content = True
 OWNER_ID = int(os.getenv('OWNER_ID'))
 bot = commands.Bot(command_prefix='!', owner_id=OWNER_ID, intents=intents)
-USER_BALANCE = Summary('user_balance', 'User balance', ['server_id', 'user_name', 'source'])
+USER_BALANCE = Gauge('user_balance', 'User balance', ['server_id', 'user_name', 'source'])
 
 database = sqlite3.connect('db/main.db')
 cursor = database.cursor()
@@ -47,7 +47,7 @@ class Economy(commands.Cog):
             user_balance = entry[2]
             self.user_data[(server_id, user_id)] = user_balance
             user = await self.bot.fetch_user(user_id)
-            USER_BALANCE.labels(server_id=server_id, user_name=user.name, source="init").observe(user_balance)
+            USER_BALANCE.labels(server_id=server_id, user_name=user.name, source="init").set(user_balance)
     
     @commands.Cog.listener()
     async def on_guild_join(self, guild):
@@ -103,13 +103,13 @@ class Economy(commands.Cog):
         balance = await self.get_user_balance(guild_id, user_id)
         balance += add_balance
         self.user_data[(guild_id, user_id)] = float("%.2f" % balance)
-        USER_BALANCE.labels(server_id=guild_id, user_id=user_id, source=source).observe(float("%.2f" % balance))
+        USER_BALANCE.labels(server_id=guild_id, user_id=user_id, source=source).set(float("%.2f" % balance))
     
     async def subtract_money(self, sub_balance, guild_id, user_id, source):
         balance = await self.get_user_balance(guild_id, user_id)
         balance -= sub_balance
         self.user_data[(guild_id, user_id)] = float("%.2f" % balance)
-        USER_BALANCE.labels(server_id=guild_id, user_id=user_id, source=source).observe(float("%.2f" % balance))
+        USER_BALANCE.labels(server_id=guild_id, user_id=user_id, source=source).set(float("%.2f" % balance))
 
     async def get_user_balance(self, guild_id, user_id):
         user_balance = self.user_data.get((guild_id, user_id), 0.0)
