@@ -39,7 +39,6 @@ class Economy(commands.Cog):
         data = cursor.execute("SELECT * FROM economy").fetchall()
         for entry in data:
             self.server_data[entry[0]] = {"currency": entry[1], "epm": entry[2]}
-            data = cursor.execute("SELECT * FROM user_balance").fetchall()
             
         data = cursor.execute("SELECT * FROM user_balance").fetchall()
         for entry in data:
@@ -48,7 +47,9 @@ class Economy(commands.Cog):
             user_balance = entry[2]
             self.user_data[(server_id, user_id)] = user_balance
             user = await self.bot.fetch_user(user_id)
+            print(user.name, user_balance)
             USER_BALANCE.labels(server_id=server_id, user_name=user.name, source="init").observe(user_balance)
+        print("user_data", self.user_data)
     
     @commands.Cog.listener()
     async def on_guild_join(self, guild):
