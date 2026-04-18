@@ -48,7 +48,7 @@ class Economy(commands.Cog):
             user_balance = entry[2]
             self.user_data[(server_id, user_id)] = user_balance
             user = await self.bot.fetch_user(user_id)
-            USER_BALANCE.labels(server_id=server_id, user_name=user.name).observe(user_balance)
+            USER_BALANCE.labels(server_id=server_id, user_name=user.name, source="init").observe(user_balance)
     
     @commands.Cog.listener()
     async def on_guild_join(self, guild):
