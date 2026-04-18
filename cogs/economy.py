@@ -103,13 +103,15 @@ class Economy(commands.Cog):
         balance = await self.get_user_balance(guild_id, user_id)
         balance += add_balance
         self.user_data[(guild_id, user_id)] = float("%.2f" % balance)
-        USER_BALANCE.labels(server_id=guild_id, user_id=user_id, source=source).set(float("%.2f" % balance))
+        user = await bot.fetch_user(user_id)
+        USER_BALANCE.labels(server_id=guild_id, user_name=user.name, source=source).set(float("%.2f" % balance))
     
     async def subtract_money(self, sub_balance, guild_id, user_id, source):
         balance = await self.get_user_balance(guild_id, user_id)
         balance -= sub_balance
         self.user_data[(guild_id, user_id)] = float("%.2f" % balance)
-        USER_BALANCE.labels(server_id=guild_id, user_id=user_id, source=source).set(float("%.2f" % balance))
+        user = await bot.fetch_user(user_id)
+        USER_BALANCE.labels(server_id=guild_id, user_name=user.name, source=source).set(float("%.2f" % balance))
 
     async def get_user_balance(self, guild_id, user_id):
         user_balance = self.user_data.get((guild_id, user_id), 0.0)
