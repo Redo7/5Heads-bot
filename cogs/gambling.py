@@ -141,7 +141,7 @@ class Gambling(commands.Cog):
         if spins > 100: raise ValueError("You can only do up to 100 spins at a time")
         required_amount = 10
         user_balance = await self.economy.get_user_balance(ctx.guild.id, ctx.author.id)
-        jackpot = await self.get_jackpot(ctx.guild.id, "get", 0)
+        jackpot = await self.get_jackpot(ctx.guild.id, "get", 0, ctx.author)
         if user_balance < required_amount * spins:
             await ctx.send("broke ahh", ephemeral=True)
             return
@@ -206,7 +206,7 @@ class Gambling(commands.Cog):
 
                 winnings += win_con[f'{self.gambling_data["slots"][winning_numbers[spin][0]]}']
                 if self.gambling_data["slots"][0.05] in slots_split[spin][0]:
-                    winnings += await self.get_jackpot(ctx.guild.id, "subtract", 0)
+                    winnings += await self.get_jackpot(ctx.guild.id, "subtract", 0, ctx.author)
             else:
                 await self.economy.add_money(required_amount * 0.75, ctx.guild.id, self.bot.user.id, "slots")
                 await self.get_jackpot(ctx.guild.id, "add", required_amount * 0.25, ctx.author)
