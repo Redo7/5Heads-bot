@@ -85,24 +85,31 @@ class Admin(commands.Cog):
             await ctx.send("This command must be used as a reply to a message.")
     
     @bot.hybrid_command(name="createreactionrole", description="Create a reaction role message")
-    @app_commands.describe(channel="The channel to send the message in", role="The role to assign", emoji="The emoji to use as a reaction", description="Used for database lookup for certain features")
+    @app_commands.describe(channel="The channel to send the message in",
+                           role="The role to assign",
+                           emoji="The emoji to use as a reaction",
+                           message="Message format of the message sent to the channel. Replaces $emoji and $role with their respective counterparts.",
+                           description="Used for database lookup for certain features",
+                           )
     @app_commands.checks.has_permissions(manage_roles=True)
     @app_commands.check(is_admin)
-    async def createreactionrole(self, ctx: commands.Context, channel: discord.TextChannel, role: discord.Role, emoji: str, description: Optional[str]):
+    async def createreactionrole(self, ctx: commands.Context, channel: discord.TextChannel, role: discord.Role, emoji: str, message: str, description: Optional[str]):
         if not ctx.guild.me.guild_permissions.manage_roles:
             raise ValueError("Missing permission to manage roles.")
 
         if role.position >= ctx.guild.me.top_role.position:
             raise ValueError("Can not assign a role because it's higher than the bot's highest role.")
 
-        message = await channel.send(f"React with {emoji} to get the {role.mention} role")
+        message = await channel.send(message.replace("$emoji", emoji).replace("$role", role.mention))
+        #f"React with {emoji} to get the {role.mention} role"
         await message.add_reaction(emoji)
 
-        cursor.execute('''
+        if True == False:
+            cursor.execute('''
             INSERT INTO roles (server_id, channel_id, message_id, role_id, emoji, description)
             VALUES (?, ?, ?, ?, ?, ?)
             ''', (ctx.guild.id, channel.id, message.id, role.id, str(emoji), description))
-        database.commit()
+            database.commit()
 
         embed = embedBuilder(bot).embed(
                 color="#ffd330",
