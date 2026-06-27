@@ -104,12 +104,11 @@ class Admin(commands.Cog):
         #f"React with {emoji} to get the {role.mention} role"
         await message.add_reaction(emoji)
 
-        if True == False:
-            cursor.execute('''
-            INSERT INTO roles (server_id, channel_id, message_id, role_id, emoji, description)
-            VALUES (?, ?, ?, ?, ?, ?)
-            ''', (ctx.guild.id, channel.id, message.id, role.id, str(emoji), description))
-            database.commit()
+        cursor.execute('''
+        INSERT INTO roles (server_id, channel_id, message_id, role_id, emoji, description)
+        VALUES (?, ?, ?, ?, ?, ?)
+        ''', (ctx.guild.id, channel.id, message.id, role.id, str(emoji), description))
+        database.commit()
 
         embed = embedBuilder(bot).embed(
                 color="#ffd330",
