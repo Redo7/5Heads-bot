@@ -71,7 +71,7 @@ async def on_ready():
     print(f'Logged in as {bot.user}')
 
     for command in bot.commands:
-        COMMAND_COUNTER.labels(command_name=command.name).inc()
+        COMMAND_COUNTER.labels(command_name=command.name)
         COMMAND_DURATION.labels(command_name=command.name).observe(0)
 
     if not update_uptime.is_running():
@@ -97,6 +97,19 @@ async def load():
         if filename.endswith(".py") and "economy" not in filename:
             print(f"Loading {filename[:-3]} cog")
             await bot.load_extension(f"cogs.{filename[:-3]}")
+
+COMMAND_START = 0
+
+@bot.event
+async def on_command(ctx):
+    global COMMAND_START
+    COMMAND_START = time.perf_counter()
+    COMMAND_COUNTER.labels(command_name=ctx.command.name).inc()
+
+@bot.event
+async def on_command_completion(ctx):
+    global COMMAND_START
+    COMMAND_DURATION.labels(command_name=ctx.command.name).observe(time.perf_counter() - COMMAND_START)
 
 @bot.event
 async def on_command_error(ctx: commands.Context, error):
