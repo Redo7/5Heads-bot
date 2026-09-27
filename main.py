@@ -71,7 +71,7 @@ async def on_ready():
     print(f'Logged in as {bot.user}')
 
     for command in bot.commands:
-        COMMAND_COUNTER.labels(command_name=command.name).inc(0)
+        COMMAND_COUNTER.labels(command_name=command.name).inc()
         COMMAND_DURATION.labels(command_name=command.name).observe(0)
 
     if not update_uptime.is_running():
